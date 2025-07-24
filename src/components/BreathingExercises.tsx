@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Wind, Play, Pause, RotateCcw } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useKV } from '@github/spark/hooks';
+import { toast } from 'sonner';
 
 interface BreathingExercise {
   id: string;
@@ -80,6 +81,7 @@ export function BreathingExercises() {
           setCurrentCycle(0);
           setCurrentPhase('inhale');
           setTimeRemaining(selectedExercise.inhaleTime);
+          toast.success('Nefes egzersizi tamamlandı! 🎉');
         }
       }
     }
@@ -89,23 +91,23 @@ export function BreathingExercises() {
     };
   }, [isActive, timeRemaining, currentPhase, currentCycle, selectedExercise, setCompletedSessions]);
 
-  const startExercise = () => {
+  const startExercise = useCallback(() => {
     setIsActive(true);
     setCurrentCycle(0);
     setCurrentPhase('inhale');
     setTimeRemaining(selectedExercise.inhaleTime);
-  };
+  }, [selectedExercise.inhaleTime]);
 
-  const pauseExercise = () => {
+  const pauseExercise = useCallback(() => {
     setIsActive(false);
-  };
+  }, []);
 
-  const resetExercise = () => {
+  const resetExercise = useCallback(() => {
     setIsActive(false);
     setCurrentCycle(0);
     setCurrentPhase('inhale');
     setTimeRemaining(selectedExercise.inhaleTime);
-  };
+  }, [selectedExercise.inhaleTime]);
 
   const getPhaseText = () => {
     switch (currentPhase) {

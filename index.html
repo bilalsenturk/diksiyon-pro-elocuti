@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
     <meta name="description" content="Konuşma kalitenizi artırmak için tasarlanmış kapsamlı diksiyon geliştirme uygulaması. Nefes kontrolü, telaffuz ve artikülasyon becerilerinizi geliştirin.">
     <meta name="keywords" content="diksiyon, konuşma, telaffuz, artikülasyon, nefes egzersizi, ses analizi, diksiyon kursu, konuşma teknikleri">
     <meta name="author" content="Diksiyon Geliştirme Uygulaması">
@@ -49,11 +49,15 @@
         
         // Error handling for uncaught errors
         window.addEventListener('error', (event) => {
-            console.error('Global error:', event.error);
+            console.error('Global error:', event.error?.message || event.message);
+            // Prevent error from breaking the app
+            event.preventDefault();
         });
         
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
+            console.error('Unhandled promise rejection:', event.reason?.message || event.reason);
+            // Prevent unhandled rejection from breaking the app
+            event.preventDefault();
         });
     </script>
 </head>

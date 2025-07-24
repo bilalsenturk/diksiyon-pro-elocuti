@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Megaphone, Play, Pause, RotateCcw, Star } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useKV } from '@github/spark/hooks';
 import { SpeechSynthesisService } from '@/lib/speechSynthesis';
+import { toast } from 'sonner';
 
 interface TongueTwister {
   id: string;
@@ -75,7 +76,7 @@ export function ArticulationPractice() {
   const [practiceScores, setPracticeScores] = useKV('articulation-scores', {} as Record<string, number>);
   const [dailyPractice, setDailyPractice] = useKV('daily-articulation', 0);
 
-  const playTwister = async () => {
+  const playTwister = useCallback(async () => {
     if (isPlaying) return;
     
     setIsPlaying(true);
@@ -84,7 +85,7 @@ export function ArticulationPractice() {
     
     if (!speechService.isSupported()) {
       // Fallback for browsers without speech synthesis
-      alert(`Telaffuz desteği mevcut değil. Metin: "${selectedTwister.text}"`);
+      toast.info(`Telaffuz desteği mevcut değil. Metin: "${selectedTwister.text}"`);
       setTimeout(() => setIsPlaying(false), 3000);
       return;
     }
@@ -100,36 +101,36 @@ export function ArticulationPractice() {
       onEnd: () => {
         setIsPlaying(false);
       },
-      onError: (error) => {
-        console.warn('Speech error:', error);
+      onError: () => {
         setIsPlaying(false);
-        // Fallback to alert
-        alert(`Metin: "${selectedTwister.text}"`);
+        // Fallback notification
+        toast.info(`Metin: "${selectedTwister.text}"`);
       }
     });
 
     if (!success) {
       setIsPlaying(false);
     }
-  };
+  }, [isPlaying, selectedTwister.text, practiceSpeed]);
 
-  const increasePracticeCount = () => {
+  const increasePracticeCount = useCallback(() => {
     setRepetitionCount(prev => prev + 1);
     setDailyPractice(prev => prev + 1);
-  };
+  }, [setDailyPractice]);
 
-  const ratePerformance = (rating: number) => {
+  const ratePerformance = useCallback((rating: number) => {
     setPracticeScores(prev => ({
       ...prev,
       [selectedTwister.id]: Math.max(prev[selectedTwister.id] || 0, rating)
     }));
     increasePracticeCount();
-  };
+    toast.success('Performans puanı kaydedildi! 🌟');
+  }, [selectedTwister.id, setPracticeScores, increasePracticeCount]);
 
-  const resetPractice = () => {
+  const resetPractice = useCallback(() => {
     setRepetitionCount(0);
     setPracticeSpeed(0.6);
-  };
+  }, []);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

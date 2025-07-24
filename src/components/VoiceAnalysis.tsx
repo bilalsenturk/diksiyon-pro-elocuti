@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, Play, Stop, TrendingUp, Volume2, Clock, Sparkles } from '@phosphor-icons/react';
+import { Mic, MicOff, TrendingUp, Volume2, Clock, Sparkles } from '@phosphor-icons/react';
 import { useKV } from '@github/spark/hooks';
 import { SocialShare } from '@/components/SocialShare';
+import { toast } from 'sonner';
 
 interface AnalysisResult {
   pitch: {
@@ -46,12 +47,12 @@ export const VoiceAnalysis = memo(() => {
     try {
       // Check browser support
       if (!navigator.mediaDevices?.getUserMedia) {
-        alert('Tarayıcınız mikrofon kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
+        toast.error('Tarayıcınız mikrofon kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
         return;
       }
 
       if (!window.MediaRecorder) {
-        alert('Tarayıcınız ses kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
+        toast.error('Tarayıcınız ses kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
         return;
       }
 
@@ -119,10 +120,10 @@ export const VoiceAnalysis = memo(() => {
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.onerror = (error) => {
-        console.error('MediaRecorder error:', error);
+      mediaRecorder.onerror = () => {
+        console.error('MediaRecorder error occurred');
         stopRecording();
-        alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+        toast.error('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       };
 
       mediaRecorder.start(100); // Record in 100ms chunks
@@ -133,14 +134,16 @@ export const VoiceAnalysis = memo(() => {
       console.error('Error starting recording:', error);
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
+          toast.error('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
         } else if (error.name === 'NotFoundError') {
-          alert('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
+          toast.error('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
         } else if (error.name === 'NotSupportedError') {
-          alert('Tarayıcınız mikrofon kaydını desteklemiyor.');
+          toast.error('Tarayıcınız mikrofon kaydını desteklemiyor.');
         } else {
-          alert('Mikrofon erişiminde bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.');
+          toast.error('Mikrofon erişiminde bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.');
         }
+      } else {
+        toast.error('Bilinmeyen bir hata oluştu. Lütfen tekrar deneyin.');
       }
     }
   }, []);
@@ -172,13 +175,16 @@ export const VoiceAnalysis = memo(() => {
       const duration = (Date.now() - recordingStartTime.current) / 1000;
       
       // Mock analysis with realistic variations
+      const baseScore = 60 + Math.random() * 25; // Base score between 60-85
+      const variation = Math.random() * 10 - 5; // Variation of ±5
+      
       const pitchAnalysis = {
         averageHz: 120 + Math.random() * 80, // Typical speech range
         range: 40 + Math.random() * 60,
         stability: 0.7 + Math.random() * 0.3,
         score: 0
       };
-      pitchAnalysis.score = Math.min(100, (pitchAnalysis.stability * 100 + (1 - Math.abs(pitchAnalysis.range - 50) / 50) * 100) / 2);
+      pitchAnalysis.score = Math.min(100, Math.max(0, baseScore + variation));
 
       const tempoAnalysis = {
         wordsPerMinute: 120 + Math.random() * 60,
@@ -186,7 +192,7 @@ export const VoiceAnalysis = memo(() => {
         rhythm: 0.6 + Math.random() * 0.4,
         score: 0
       };
-      tempoAnalysis.score = Math.min(100, (tempoAnalysis.rhythm * 100 + Math.max(0, 100 - Math.abs(tempoAnalysis.wordsPerMinute - 150) * 2)) / 2);
+      tempoAnalysis.score = Math.min(100, Math.max(0, baseScore + variation * 0.8));
 
       const clarityAnalysis = {
         consonantSharpness: 0.6 + Math.random() * 0.4,
@@ -194,7 +200,7 @@ export const VoiceAnalysis = memo(() => {
         overall: 0.65 + Math.random() * 0.35,
         score: 0
       };
-      clarityAnalysis.score = clarityAnalysis.overall * 100;
+      clarityAnalysis.score = Math.min(100, Math.max(0, baseScore + variation * 1.2));
 
       const result: AnalysisResult = {
         pitch: pitchAnalysis,
@@ -206,9 +212,11 @@ export const VoiceAnalysis = memo(() => {
 
       setCurrentAnalysis(result);
       setAnalysisHistory(prev => [result, ...prev.slice(0, 9)]); // Keep last 10 analyses
+      toast.success('Ses analizi tamamlandı!');
       
     } catch (error) {
       console.error('Error analyzing audio:', error);
+      toast.error('Analiz sırasında bir hata oluştu.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -269,8 +277,9 @@ export const VoiceAnalysis = memo(() => {
 
           {audioBlob && (
             <div className="flex justify-center mt-4">
-              <audio controls className="w-full max-w-md">
-                <source src={URL.createObjectURL(audioBlob)} type="audio/wav" />
+              <audio controls className="w-full max-w-md" preload="none">
+                <source src={URL.createObjectURL(audioBlob)} type={audioBlob.type} />
+                Tarayıcınız ses çalmayı desteklemiyor.
               </audio>
             </div>
           )}

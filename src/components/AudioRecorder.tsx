@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Play, Pause, RotateCcw, TrendingUp } from '@phosphor-icons/react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Mic, MicOff, TrendingUp } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { useKV } from '@github/spark/hooks';
+import { toast } from 'sonner';
 
 interface AudioRecorderProps {
   onRecordingComplete: (audioBlob: Blob, duration: number) => void;
@@ -23,36 +23,50 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
 
   useEffect(() => {
     return () => {
-      stopRecording();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(console.warn);
-        audioContextRef.current = null;
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
+      cleanup();
     };
   }, []);
 
-  const startRecording = async () => {
+  const cleanup = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (error) {
+        console.warn('Error stopping recorder during cleanup:', error);
+      }
+    }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(console.warn);
+      audioContextRef.current = null;
+    }
+    
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  }, [isRecording]);
+
+  const startRecording = useCallback(async () => {
     try {
       // Check browser support
       if (!navigator.mediaDevices?.getUserMedia) {
-        alert('Tarayıcınız mikrofon kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
+        toast.error('Tarayıcınız mikrofon kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
         return;
       }
 
       if (!window.MediaRecorder) {
-        alert('Tarayıcınız ses kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
+        toast.error('Tarayıcınız ses kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
         return;
       }
 
@@ -119,10 +133,10 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorderRef.current.onerror = (error) => {
-        console.error('MediaRecorder error:', error);
+      mediaRecorderRef.current.onerror = () => {
+        console.error('MediaRecorder error occurred');
         stopRecording();
-        alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+        toast.error('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
       };
 
       mediaRecorderRef.current.start(100); // Record in 100ms chunks
@@ -142,39 +156,50 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
       console.error('Error accessing microphone:', error);
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
+          toast.error('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
         } else if (error.name === 'NotFoundError') {
-          alert('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
+          toast.error('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
         } else if (error.name === 'NotSupportedError') {
-          alert('Tarayıcınız mikrofon kaydını desteklemiyor.');
+          toast.error('Tarayıcınız mikrofon kaydını desteklemiyor.');
         } else {
-          alert('Mikrofon erişiminde bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.');
+          toast.error('Mikrofon erişiminde bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.');
         }
+      } else {
+        toast.error('Bilinmeyen bir hata oluştu. Lütfen tekrar deneyin.');
       }
     }
-  };
+  }, [onRecordingComplete, onRecordingStateChange, duration]);
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      onRecordingStateChange(false);
+      try {
+        mediaRecorderRef.current.stop();
+        onRecordingStateChange(false);
+      } catch (error) {
+        console.warn('Error stopping recording:', error);
+        onRecordingStateChange(false);
+      }
     }
+    
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
+    
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    
     setAudioLevel(0);
-  };
+  }, [isRecording, onRecordingStateChange]);
 
-  const monitorAudioLevel = () => {
+  const monitorAudioLevel = useCallback(() => {
     if (!analyserRef.current) return;
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
@@ -185,7 +210,7 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
       try {
         analyserRef.current.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
-        setAudioLevel(average / 255 * 100);
+        setAudioLevel((average / 255) * 100);
         
         animationRef.current = requestAnimationFrame(updateLevel);
       } catch (error) {
@@ -195,7 +220,7 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
     };
     
     updateLevel();
-  };
+  }, [isRecording]);
 
   return (
     <Card className="w-full">

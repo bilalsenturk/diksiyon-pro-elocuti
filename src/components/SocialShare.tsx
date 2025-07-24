@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -201,15 +201,23 @@ Konuşma becerilerimi Diksiyon Geliştirme Uygulaması ile geliştiriyorum! 🗣
     }
   }, [generateImageCard]);
 
-  const shareUrls = {
-    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(generateShareText())}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(generateShareText())}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(generateShareText())}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(generateShareText())}`
-  };
+  const shareUrls = useMemo(() => {
+    const text = generateShareText();
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    
+    return {
+      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(text)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}&summary=${encodeURIComponent(text)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(text)}`
+    };
+  }, [generateShareText]);
 
   const handleSocialShare = useCallback((platform: keyof typeof shareUrls) => {
-    window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+    const url = shareUrls[platform];
+    if (url) {
+      window.open(url, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
+    }
   }, [shareUrls]);
 
   return (
@@ -341,12 +349,6 @@ Konuşma becerilerimi Diksiyon Geliştirme Uygulaması ile geliştiriyorum! 🗣
 }
 
 // Helper function for canvas rounded rectangles (for older browsers)
-declare global {
-  interface CanvasRenderingContext2D {
-    roundRect(x: number, y: number, width: number, height: number, radius: number): void;
-  }
-}
-
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x: number, y: number, width: number, height: number, radius: number) {
     this.beginPath();

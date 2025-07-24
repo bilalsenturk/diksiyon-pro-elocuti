@@ -63,11 +63,11 @@ export class SpeechSynthesisService {
     volume?: number;
     onStart?: () => void;
     onEnd?: () => void;
-    onError?: (error: any) => void;
+    onError?: (error: Error | Event) => void;
   } = {}): Promise<boolean> {
     try {
       if (!('speechSynthesis' in window)) {
-        options.onError?.('Speech synthesis not supported');
+        options.onError?.(new Error('Speech synthesis not supported'));
         return false;
       }
 
@@ -91,10 +91,10 @@ export class SpeechSynthesisService {
         utterance.voice = turkishVoice;
       }
 
-      // Set other options
-      utterance.rate = options.rate || 0.8;
-      utterance.pitch = options.pitch || 1;
-      utterance.volume = options.volume || 1;
+      // Set other options with safe defaults
+      utterance.rate = Math.max(0.1, Math.min(10, options.rate || 0.8));
+      utterance.pitch = Math.max(0, Math.min(2, options.pitch || 1));
+      utterance.volume = Math.max(0, Math.min(1, options.volume || 1));
 
       // Add timeout to prevent hanging
       const timeout = setTimeout(() => {
@@ -113,9 +113,9 @@ export class SpeechSynthesisService {
           resolve(true);
         };
 
-        utterance.onerror = (error) => {
+        utterance.onerror = (error: SpeechSynthesisErrorEvent) => {
           clearTimeout(timeout);
-          options.onError?.(error);
+          options.onError?.(new Error(error.error || 'Speech synthesis error'));
           resolve(false);
         };
 
@@ -123,12 +123,12 @@ export class SpeechSynthesisService {
           speechSynthesis.speak(utterance);
         } catch (error) {
           clearTimeout(timeout);
-          options.onError?.(error);
+          options.onError?.(error instanceof Error ? error : new Error('Speech synthesis failed'));
           resolve(false);
         }
       });
     } catch (error) {
-      options.onError?.(error);
+      options.onError?.(error instanceof Error ? error : new Error('Speech synthesis failed'));
       return false;
     }
   }

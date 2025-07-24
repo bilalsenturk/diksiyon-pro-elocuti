@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Volume2, Play, Pause, Check, RotateCcw } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useKV } from '@github/spark/hooks';
 import { SpeechSynthesisService } from '@/lib/speechSynthesis';
+import { toast } from 'sonner';
 
 interface Word {
   id: string;
@@ -90,7 +91,7 @@ export function SyllableExercises() {
   const [practiceMode, setPracticeMode] = useState<'syllables' | 'full'>('syllables');
   const [completedWords, setCompletedWords] = useKV('completed-syllable-words', [] as string[]);
 
-  const playCurrentSyllable = async () => {
+  const playCurrentSyllable = useCallback(async () => {
     if (isPlaying) return;
     
     setIsPlaying(true);
@@ -102,7 +103,7 @@ export function SyllableExercises() {
     
     if (!speechService.isSupported()) {
       // Fallback for browsers without speech synthesis
-      alert(`Telaffuz desteği mevcut değil. Kelime/Hece: "${syllableText}"`);
+      toast.info(`Telaffuz desteği mevcut değil. Kelime/Hece: "${syllableText}"`);
       setTimeout(() => setIsPlaying(false), 1000);
       return;
     }
@@ -118,36 +119,36 @@ export function SyllableExercises() {
       onEnd: () => {
         setIsPlaying(false);
       },
-      onError: (error) => {
-        console.warn('Speech error:', error);
+      onError: () => {
         setIsPlaying(false);
-        // Fallback to alert
-        alert(`Kelime/Hece: "${syllableText}"`);
+        // Fallback notification
+        toast.info(`Kelime/Hece: "${syllableText}"`);
       }
     });
 
     if (!success) {
       setIsPlaying(false);
     }
-  };
+  }, [isPlaying, practiceMode, selectedWord, currentSyllable]);
 
-  const nextSyllable = () => {
+  const nextSyllable = useCallback(() => {
     if (currentSyllable < selectedWord.syllables.length - 1) {
       setCurrentSyllable(prev => prev + 1);
     }
-  };
+  }, [currentSyllable, selectedWord.syllables.length]);
 
-  const previousSyllable = () => {
+  const previousSyllable = useCallback(() => {
     if (currentSyllable > 0) {
       setCurrentSyllable(prev => prev - 1);
     }
-  };
+  }, [currentSyllable]);
 
-  const markWordCompleted = () => {
+  const markWordCompleted = useCallback(() => {
     if (!completedWords.includes(selectedWord.id)) {
       setCompletedWords(prev => [...prev, selectedWord.id]);
+      toast.success('Kelime tamamlandı! 🎉');
     }
-  };
+  }, [completedWords, selectedWord.id, setCompletedWords]);
 
   const resetProgress = () => {
     setCurrentSyllable(0);
