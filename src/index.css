@@ -65,4 +65,57 @@
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  html {
+    /* Prevent zoom on input focus for iOS */
+    font-size: 16px;
+  }
+  
+  /* Improve touch targets */
+  button, [role="button"], input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Better audio controls on mobile */
+  audio {
+    width: 100%;
+    height: 40px;
+  }
+  
+  /* Better tab styling on mobile */
+  [role="tablist"] button {
+    min-height: 56px;
+    touch-action: manipulation;
+  }
+  
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Better card spacing on mobile */
+  .card {
+    margin: 0 0.25rem;
+  }
+}
+
+/* Enhanced touch interactions */
+@media (pointer: coarse) {
+  button, [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Focus improvements for accessibility */
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

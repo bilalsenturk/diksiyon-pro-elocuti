@@ -133,12 +133,12 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
           <Mic className="h-5 w-5" />
           Ses Kaydı
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Diksiyonunuzu analiz etmek için ses kaydı yapın
         </CardDescription>
       </CardHeader>
@@ -149,11 +149,11 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
               size="lg"
               variant={isRecording ? "destructive" : "default"}
               onClick={isRecording ? stopRecording : startRecording}
-              className="h-16 w-16 rounded-full"
+              className="h-20 w-20 sm:h-16 sm:w-16 rounded-full touch-manipulation"
               aria-label={isRecording ? "Kaydı durdur" : "Kayıt başlat"}
               aria-describedby="recording-status"
             >
-              {isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+              {isRecording ? <MicOff className="h-8 w-8 sm:h-6 sm:w-6" /> : <Mic className="h-8 w-8 sm:h-6 sm:w-6" />}
             </Button>
             {isRecording && (
               <div className="absolute -inset-2 rounded-full border-2 border-red-500 animate-pulse" />
@@ -161,13 +161,13 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
           </div>
           
           {isRecording && (
-            <div className="text-center space-y-2" id="recording-status">
-              <div className="text-2xl font-mono text-primary" aria-live="polite">
+            <div className="text-center space-y-3 w-full max-w-xs" id="recording-status">
+              <div className="text-3xl sm:text-2xl font-mono text-primary" aria-live="polite">
                 {duration.toFixed(1)}s
               </div>
-              <div className="w-48 space-y-1">
+              <div className="w-full space-y-2">
                 <div className="text-sm text-muted-foreground">Ses Seviyesi</div>
-                <Progress value={audioLevel} className="h-2" aria-label={`Ses seviyesi: ${Math.round(audioLevel)}%`} />
+                <Progress value={audioLevel} className="h-3 sm:h-2 w-full" aria-label={`Ses seviyesi: ${Math.round(audioLevel)}%`} />
               </div>
             </div>
           )}
