@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, Wind, Volume2, Megaphone, TrendingUp } from '@phosphor-icons/react';
+import { Mic, Wind, Volume2, Megaphone, TrendingUp, Sparkles } from '@phosphor-icons/react';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { BreathingExercises } from '@/components/BreathingExercises';
 import { SyllableExercises } from '@/components/SyllableExercises';
 import { ArticulationPractice } from '@/components/ArticulationPractice';
 import { ProgressTracking } from '@/components/ProgressTracking';
+import { VoiceAnalysis } from '@/components/VoiceAnalysis';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -31,8 +32,12 @@ function App() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="recorder" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+        <Tabs defaultValue="analysis" className="w-full">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
+            <TabsTrigger value="analysis" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Analiz</span>
+            </TabsTrigger>
             <TabsTrigger value="recorder" className="flex items-center gap-2">
               <Mic className="h-4 w-4" />
               <span className="hidden sm:inline">Ses Kaydı</span>
@@ -54,6 +59,10 @@ function App() {
               <span className="hidden sm:inline">İlerleme</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analysis">
+            <VoiceAnalysis />
+          </TabsContent>
 
           <TabsContent value="recorder" className="space-y-6">
             <AudioRecorder
