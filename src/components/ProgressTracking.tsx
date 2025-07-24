@@ -1,268 +1,520 @@
-import React from 'react';
-import { TrendingUp, Calendar, Target, Award, Clock } from '@phosphor-icons/react';
+import React, { useMemo } from 'react';
+import { TrendingUp, Calendar, Target, Award, Clock, Trophy, Star, BookOpen, Sparkles } from '@phosphor-icons/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useKV } from '@github/spark/hooks';
+import { AnalyticsManager, type UsageStats, type SkillLevel } from '@/lib/content';
 
-interface ProgressStats {
-  breathingSessions: number;
-  completedWords: string[];
-  articulationScores: Record<string, number>;
-  dailyPractice: number;
-  weeklyGoal: number;
+interface DetailedStats {
+  breathingStats: {
+    totalSessions: number;
+    completedExercises: string[];
+    averageDuration: number;
+  };
+  syllableStats: {
+    completedExercises: string[];
+    practiceTime: number;
+  };
+  articulationStats: {
+    completedExercises: string[];
+    practiceStats: {
+      totalTime: number;
+      completedItems: number;
+    };
+  };
+  voiceAnalysisStats: {
+    totalAnalyses: number;
+    averageScores: {
+      clarity: number;
+      pitch: number;
+      tempo: number;
+    };
+  };
 }
 
 export function ProgressTracking() {
+  // Breathing exercises data
   const [breathingSessions] = useKV('completed-breathing-sessions', 0);
-  const [completedWords] = useKV('completed-syllable-words', [] as string[]);
-  const [articulationScores] = useKV('articulation-scores', {} as Record<string, number>);
-  const [dailyPractice] = useKV('daily-articulation', 0);
-  const [weeklyGoal] = useKV('weekly-goal', 50);
-
-  // Calculate weekly progress (simplified - would need proper date tracking)
-  const weeklyProgress = Math.min((dailyPractice * 7) / weeklyGoal * 100, 100);
-
-  // Calculate average articulation score
-  const articulationValues = Object.values(articulationScores);
-  const avgArticulationScore = articulationValues.length > 0 
-    ? articulationValues.reduce((sum, score) => sum + score, 0) / articulationValues.length 
-    : 0;
-
-  // Calculate overall completion percentage
-  const totalExerciseTypes = 3; // breathing, syllables, articulation
-  const completedTypes = [
-    breathingSessions > 0 ? 1 : 0,
-    completedWords.length > 0 ? 1 : 0,
-    articulationValues.length > 0 ? 1 : 0
-  ].reduce((sum, val) => sum + val, 0);
+  const [completedBreathingExercises] = useKV<string[]>('completed-breathing-exercises', []);
   
-  const overallProgress = (completedTypes / totalExerciseTypes) * 100;
+  // Syllable exercises data
+  const [completedSyllableExercises] = useKV<string[]>('completed-syllable-exercises', []);
+  
+  // Articulation exercises data
+  const [completedArticulationExercises] = useKV<string[]>('completed-articulation-exercises', []);
+  const [articulationPracticeStats] = useKV('articulation-practice-stats', { totalTime: 0, completedItems: 0 });
+  
+  // Voice analysis data
+  const [voiceAnalysisData] = useKV('voice-analysis-results', [] as any[]);
+  
+  // User settings and progress
+  const [userLevel, setUserLevel] = useKV<SkillLevel>('user-level', 'beginner');
+  const [weeklyGoal] = useKV('weekly-goal', 50);
+  const [dailyStreak] = useKV('daily-streak', 0);
 
-  // Generate insights
+  // Calculate comprehensive statistics
+  const detailedStats: DetailedStats = useMemo(() => {
+    const analysisScores = voiceAnalysisData.length > 0 
+      ? voiceAnalysisData.reduce((acc, analysis) => {
+          acc.clarity += analysis.scores?.clarity || 0;
+          acc.pitch += analysis.scores?.pitch || 0;
+          acc.tempo += analysis.scores?.tempo || 0;
+          return acc;
+        }, { clarity: 0, pitch: 0, tempo: 0 })
+      : { clarity: 0, pitch: 0, tempo: 0 };
+
+    return {
+      breathingStats: {
+        totalSessions: breathingSessions,
+        completedExercises: completedBreathingExercises,
+        averageDuration: breathingSessions > 0 ? breathingSessions * 2.5 : 0 // Estimated
+      },
+      syllableStats: {
+        completedExercises: completedSyllableExercises,
+        practiceTime: completedSyllableExercises.length * 3 // Estimated minutes
+      },
+      articulationStats: {
+        completedExercises: completedArticulationExercises,
+        practiceStats: articulationPracticeStats
+      },
+      voiceAnalysisStats: {
+        totalAnalyses: voiceAnalysisData.length,
+        averageScores: voiceAnalysisData.length > 0 ? {
+          clarity: analysisScores.clarity / voiceAnalysisData.length,
+          pitch: analysisScores.pitch / voiceAnalysisData.length,
+          tempo: analysisScores.tempo / voiceAnalysisData.length
+        } : { clarity: 0, pitch: 0, tempo: 0 }
+      }
+    };
+  }, [
+    breathingSessions, 
+    completedBreathingExercises,
+    completedSyllableExercises,
+    completedArticulationExercises,
+    articulationPracticeStats,
+    voiceAnalysisData
+  ]);
+
+  // Calculate usage statistics for analytics
+  const usageStats: UsageStats = useMemo(() => {
+    const totalCompleted = 
+      detailedStats.breathingStats.completedExercises.length +
+      detailedStats.syllableStats.completedExercises.length +
+      detailedStats.articulationStats.completedExercises.length;
+
+    return {
+      totalExercisesCompleted: totalCompleted,
+      exercisesByLevel: {
+        beginner: Math.ceil(totalCompleted * 0.4),
+        intermediate: Math.ceil(totalCompleted * 0.3),
+        advanced: Math.ceil(totalCompleted * 0.2),
+        expert: Math.ceil(totalCompleted * 0.1)
+      },
+      exercisesByCategory: {
+        breathing: detailedStats.breathingStats.completedExercises.length,
+        syllable: detailedStats.syllableStats.completedExercises.length,
+        articulation: detailedStats.articulationStats.completedExercises.length,
+        tongue_twister: Math.ceil(detailedStats.articulationStats.completedExercises.length * 0.3),
+        reading: 0 // Will be implemented later
+      },
+      averageDifficulty: AnalyticsManager.getRecommendedDifficulty({
+        totalExercisesCompleted: totalCompleted,
+        exercisesByLevel: {
+          beginner: Math.ceil(totalCompleted * 0.4),
+          intermediate: Math.ceil(totalCompleted * 0.3),
+          advanced: Math.ceil(totalCompleted * 0.2),
+          expert: Math.ceil(totalCompleted * 0.1)
+        },
+        exercisesByCategory: {
+          breathing: detailedStats.breathingStats.completedExercises.length,
+          syllable: detailedStats.syllableStats.completedExercises.length,
+          articulation: detailedStats.articulationStats.completedExercises.length,
+          tongue_twister: 0,
+          reading: 0
+        },
+        streakDays: dailyStreak,
+        totalTimeSpent: detailedStats.syllableStats.practiceTime + detailedStats.articulationStats.practiceStats.totalTime
+      }),
+      streakDays: dailyStreak,
+      totalTimeSpent: detailedStats.syllableStats.practiceTime + detailedStats.articulationStats.practiceStats.totalTime
+    };
+  }, [detailedStats, dailyStreak]);
+
+  // Calculate recommended user level
+  const recommendedLevel = AnalyticsManager.calculateUserLevel(usageStats);
+  
+  // Get weak areas
+  const weakAreas = AnalyticsManager.getWeakAreas(usageStats);
+
+  // Calculate overall progress
+  const overallProgress = Math.min(
+    ((usageStats.totalExercisesCompleted / 20) * 100),
+    100
+  );
+
+  // Calculate weekly progress
+  const weeklyProgress = Math.min(
+    ((usageStats.totalExercisesCompleted % 7) / 7) * 100,
+    100
+  );
+
+  // Get level badge color
+  const getLevelColor = (level: SkillLevel): string => {
+    const colors = {
+      beginner: 'bg-blue-100 text-blue-800',
+      intermediate: 'bg-purple-100 text-purple-800',
+      advanced: 'bg-orange-100 text-orange-800',
+      expert: 'bg-red-100 text-red-800'
+    };
+    return colors[level];
+  };
+
+  // Get insights
   const getInsights = () => {
     const insights: string[] = [];
     
-    if (breathingSessions < 5) {
-      insights.push("Nefes egzersizlerinizi artırarak konuşma kalitenizi daha da geliştirebilirsiniz.");
+    if (detailedStats.breathingStats.totalSessions < 5) {
+      insights.push("🫁 Nefes egzersizlerinizi artırarak konuşma kalitenizi daha da geliştirebilirsiniz.");
     }
     
-    if (completedWords.length < 3) {
-      insights.push("Daha fazla kelime pratiği yaparak telaffuzunuzu mükemmelleştirebilirsiniz.");
+    if (detailedStats.syllableStats.completedExercises.length < 3) {
+      insights.push("🔤 Daha fazla hece pratiği yaparak telaffuzunuzu mükemmelleştirebilirsiniz.");
     }
     
-    if (avgArticulationScore < 4) {
-      insights.push("Artikülasyon egzersizlerinde daha çok pratik yaparak puanınızı artırabilirsiniz.");
+    if (detailedStats.articulationStats.completedExercises.length < 3) {
+      insights.push("🎯 Artikülasyon egzersizleri ile net konuşma becerilerinizi geliştirebilirsiniz.");
     }
     
-    if (dailyPractice > 20) {
-      insights.push("Harika! Günlük pratiğiniz çok iyi seviyede.");
+    if (weakAreas.length > 0) {
+      insights.push(`📈 Şu alanlara odaklanmanız önerilir: ${weakAreas.join(', ')}`);
+    }
+    
+    if (recommendedLevel !== userLevel) {
+      insights.push(`⭐ Seviye yükseltme zamanı! ${recommendedLevel} seviyesine geçmeyi düşünün.`);
+    }
+    
+    if (usageStats.streakDays > 0) {
+      insights.push(`🔥 Harika! ${usageStats.streakDays} günlük çalışma serisi devam ediyor.`);
     }
     
     if (insights.length === 0) {
-      insights.push("Tüm alanlarda dengeli bir ilerleme kaydediyorsunuz. Devam edin!");
+      insights.push("🎉 Mükemmel ilerleme kaydediyorsunuz! Böyle devam edin!");
     }
     
     return insights;
   };
 
-  const insights = getInsights();
+  const getScoreColor = (score: number): string => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          İlerleme Takibi
-        </CardTitle>
-        <CardDescription>
-          Diksiyon geliştirme yolculuğunuzdaki ilerlemelerinizi takip edin
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        
-        {/* Overall Progress */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-base sm:text-lg font-semibold">Genel İlerleme</h3>
-            <span className="text-xl sm:text-2xl font-bold text-primary whitespace-nowrap">{Math.round(overallProgress)}%</span>
-          </div>
-          <Progress value={overallProgress} className="h-3" />
-          <p className="text-sm text-muted-foreground break-words">
-            Tüm egzersiz kategorilerindeki genel performansınız
-          </p>
-        </div>
+    <div className="w-full space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            İlerleme Takibi
+          </CardTitle>
+          <CardDescription>
+            Diksiyon gelişiminizi detaylı analiz edin ve hedeflerinizi takip edin
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          {/* Breathing Sessions */}
-          <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xl sm:text-2xl font-bold">{breathingSessions}</div>
-                  <div className="text-sm text-muted-foreground truncate">Nefes Seansı</div>
-                </div>
+      {/* Level and Achievements */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Star className="h-5 w-5 text-yellow-600" />
+              <span className="text-sm text-muted-foreground">Mevcut Seviye</span>
+            </div>
+            <Badge className={`${getLevelColor(userLevel)} text-sm`}>
+              {userLevel === 'beginner' ? 'Başlangıç' :
+               userLevel === 'intermediate' ? 'Orta' :
+               userLevel === 'advanced' ? 'İleri' : 'Uzman'}
+            </Badge>
+            {recommendedLevel !== userLevel && (
+              <div className="mt-2">
+                <Badge variant="outline" className="text-xs">
+                  Önerilen: {recommendedLevel === 'beginner' ? 'Başlangıç' :
+                            recommendedLevel === 'intermediate' ? 'Orta' :
+                            recommendedLevel === 'advanced' ? 'İleri' : 'Uzman'}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Completed Words */}
-          <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                  <Target className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xl sm:text-2xl font-bold">{completedWords.length}</div>
-                  <div className="text-sm text-muted-foreground truncate">Kelime Öğrenildi</div>
-                </div>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Trophy className="h-5 w-5 text-yellow-600" />
+              <span className="text-sm text-muted-foreground">Toplam Tamamlanan</span>
+            </div>
+            <div className="text-2xl font-bold">{usageStats.totalExercisesCompleted}</div>
+            <div className="text-xs text-muted-foreground">egzersiz</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <span className="text-sm text-muted-foreground">Toplam Süre</span>
+            </div>
+            <div className="text-2xl font-bold">{usageStats.totalTimeSpent}</div>
+            <div className="text-xs text-muted-foreground">dakika</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Calendar className="h-5 w-5 text-green-600" />
+              <span className="text-sm text-muted-foreground">Günlük Seri</span>
+            </div>
+            <div className="text-2xl font-bold">{usageStats.streakDays}</div>
+            <div className="text-xs text-muted-foreground">gün</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Progress Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Genel İlerleme</CardTitle>
+            <CardDescription>Tüm egzersiz türlerindeki genel performansınız</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span>Genel İlerleme</span>
+                <span>{Math.round(overallProgress)}%</span>
               </div>
-            </CardContent>
-          </Card>
+              <Progress value={overallProgress} className="h-3" />
+            </div>
+            
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span>Haftalık Hedef</span>
+                <span>{Math.round(weeklyProgress)}%</span>
+              </div>
+              <Progress value={weeklyProgress} className="h-3" />
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Articulation Score */}
-          <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <Award className="h-4 w-4 text-purple-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xl sm:text-2xl font-bold">
-                    {avgArticulationScore > 0 ? avgArticulationScore.toFixed(1) : '0.0'}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Ses Analizi Skorları</CardTitle>
+            <CardDescription>Voice analysis ortalama performansınız</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {detailedStats.voiceAnalysisStats.totalAnalyses > 0 ? (
+              <>
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Netlik</span>
+                    <span className={getScoreColor(detailedStats.voiceAnalysisStats.averageScores.clarity)}>
+                      {Math.round(detailedStats.voiceAnalysisStats.averageScores.clarity)}/100
+                    </span>
                   </div>
-                  <div className="text-sm text-muted-foreground truncate">Artikülasyon Puanı</div>
+                  <Progress value={detailedStats.voiceAnalysisStats.averageScores.clarity} className="h-2" />
                 </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Ton</span>
+                    <span className={getScoreColor(detailedStats.voiceAnalysisStats.averageScores.pitch)}>
+                      {Math.round(detailedStats.voiceAnalysisStats.averageScores.pitch)}/100
+                    </span>
+                  </div>
+                  <Progress value={detailedStats.voiceAnalysisStats.averageScores.pitch} className="h-2" />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Tempo</span>
+                    <span className={getScoreColor(detailedStats.voiceAnalysisStats.averageScores.tempo)}>
+                      {Math.round(detailedStats.voiceAnalysisStats.averageScores.tempo)}/100
+                    </span>
+                  </div>
+                  <Progress value={detailedStats.voiceAnalysisStats.averageScores.tempo} className="h-2" />
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-muted-foreground">
+                <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Henüz ses analizi yapmadınız</p>
+                <p className="text-xs">Ses analizi sekmesinden başlayın</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Statistics */}
+      <Tabs defaultValue="categories" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="categories">Kategoriler</TabsTrigger>
+          <TabsTrigger value="insights">Öneriler</TabsTrigger>
+          <TabsTrigger value="achievements">Başarılar</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Breathing Exercises */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Nefes Egzersizleri
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Tamamlanan Seans</span>
+                  <span className="font-medium">{detailedStats.breathingStats.totalSessions}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Tamamlanan Egzersiz</span>
+                  <span className="font-medium">{detailedStats.breathingStats.completedExercises.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Ortalama Süre</span>
+                  <span className="font-medium">{detailedStats.breathingStats.averageDuration.toFixed(1)} dk</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Syllable Exercises */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Hece Egzersizleri
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Tamamlanan Egzersiz</span>
+                  <span className="font-medium">{detailedStats.syllableStats.completedExercises.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Toplam Süre</span>
+                  <span className="font-medium">{detailedStats.syllableStats.practiceTime} dk</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Articulation Exercises */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Award className="h-4 w-4" />
+                  Artikülasyon
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Tamamlanan Egzersiz</span>
+                  <span className="font-medium">{detailedStats.articulationStats.completedExercises.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Toplam Çalışma</span>
+                  <span className="font-medium">{detailedStats.articulationStats.practiceStats.completedItems}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Toplam Süre</span>
+                  <span className="font-medium">{detailedStats.articulationStats.practiceStats.totalTime} dk</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="insights" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Kişiselleştirilmiş Öneriler</CardTitle>
+              <CardDescription>Gelişiminizi hızlandırmak için özel öneriler</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {getInsights().map((insight, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-sm">{insight}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-
-          {/* Daily Practice */}
-          <Card className="border-l-4 border-l-orange-500">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg flex-shrink-0">
-                  <Calendar className="h-4 w-4 text-orange-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xl sm:text-2xl font-bold">{dailyPractice}</div>
-                  <div className="text-sm text-muted-foreground truncate">Günlük Pratik</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Weekly Goal Progress */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-base sm:text-lg font-semibold">Haftalık Hedef</h3>
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {dailyPractice * 7} / {weeklyGoal} tekrar
-            </span>
+        </TabsContent>
+        
+        <TabsContent value="achievements" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Achievement badges */}
+            {usageStats.totalExercisesCompleted >= 5 && (
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Trophy className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                  <h3 className="font-medium">İlk Adım</h3>
+                  <p className="text-xs text-muted-foreground">5 egzersiz tamamladınız</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {usageStats.totalExercisesCompleted >= 20 && (
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Award className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                  <h3 className="font-medium">Azimli Öğrenci</h3>
+                  <p className="text-xs text-muted-foreground">20 egzersiz tamamladınız</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {usageStats.streakDays >= 7 && (
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Star className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                  <h3 className="font-medium">Haftalık Seri</h3>
+                  <p className="text-xs text-muted-foreground">7 gün üst üste çalıştınız</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {detailedStats.voiceAnalysisStats.totalAnalyses >= 5 && (
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <h3 className="font-medium">Analiz Uzmanı</h3>
+                  <p className="text-xs text-muted-foreground">5 ses analizi yaptınız</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {Object.values(usageStats.exercisesByCategory).every(count => count > 0) && (
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Sparkles className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                  <h3 className="font-medium">Çok Yönlü</h3>
+                  <p className="text-xs text-muted-foreground">Tüm kategorilerde çalıştınız</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
-          <Progress value={weeklyProgress} className="h-2" />
-          <p className="text-sm text-muted-foreground break-words">
-            Bu hafta için belirlediğiniz hedefe ulaşma oranınız
-          </p>
-        </div>
-
-        {/* Detailed Progress by Category */}
-        <div className="space-y-4">
-          <h3 className="text-base sm:text-lg font-semibold">Kategori Bazlı İlerleme</h3>
-          
-          <div className="space-y-3">
-            {/* Breathing Progress */}
-            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate">Nefes Egzersizleri</div>
-                <div className="text-sm text-muted-foreground break-words">
-                  {breathingSessions} seans tamamlandı
-                </div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-lg font-semibold text-blue-600">
-                  {breathingSessions > 0 ? '✓' : '○'}
-                </div>
-              </div>
-            </div>
-
-            {/* Syllable Progress */}
-            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate">Heceleme Egzersizleri</div>
-                <div className="text-sm text-muted-foreground break-words">
-                  {completedWords.length} kelime tamamlandı
-                </div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-lg font-semibold text-green-600">
-                  {Math.round((completedWords.length / 6) * 100)}%
-                </div>
-              </div>
-            </div>
-
-            {/* Articulation Progress */}
-            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate">Artikülasyon Pratiği</div>
-                <div className="text-sm text-muted-foreground break-words">
-                  {articulationValues.length} egzersiz değerlendirildi
-                </div>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-lg font-semibold text-purple-600">
-                  {avgArticulationScore > 0 ? `${avgArticulationScore.toFixed(1)}/5` : '0/5'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Insights and Recommendations */}
-        <div className="space-y-3">
-          <h3 className="text-base sm:text-lg font-semibold">Öneriler ve İçgörüler</h3>
-          <div className="space-y-2">
-            {insights.map((insight, index) => (
-              <div
-                key={index}
-                className="p-3 bg-accent/10 border-l-4 border-l-accent rounded-r-lg"
-              >
-                <p className="text-sm break-words">{insight}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Achievement Badges */}
-        {(breathingSessions > 10 || completedWords.length > 3 || avgArticulationScore > 4) && (
-          <div className="space-y-3">
-            <h3 className="text-base sm:text-lg font-semibold">Başarımlar</h3>
-            <div className="flex flex-wrap gap-2">
-              {breathingSessions > 10 && (
-                <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium break-words">
-                  🌬️ Nefes Ustası
-                </div>
-              )}
-              {completedWords.length > 3 && (
-                <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm font-medium break-words">
-                  📚 Kelime Avcısı
-                </div>
-              )}
-              {avgArticulationScore > 4 && (
-                <div className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs sm:text-sm font-medium break-words">
-                  🎯 Artikülasyon Şampiyonu
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

@@ -1,72 +1,24 @@
-import React, { useState, useCallback } from 'react';
-import { Volume2, Play, Pause, Check, RotateCcw } from '@phosphor-icons/react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Volume2, Play, Pause, Check, RotateCcw, FunnelSimple, Trophy, Target, BookOpen, ChevronLeft, ChevronRight } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { useKV } from '@github/spark/hooks';
 import { SpeechSynthesisService } from '@/lib/speechSynthesis';
+import { syllableExercisesDatabase, ContentManager, type SyllableExerciseData, type SkillLevel } from '@/lib/content';
 import { toast } from 'sonner';
-
-interface Word {
-  id: string;
-  word: string;
-  syllables: string[];
-  difficulty: 'easy' | 'medium' | 'hard';
-  meaning: string;
-}
-
-const practiceWords: Word[] = [
-  {
-    id: '1',
-    word: 'artikülasyon',
-    syllables: ['ar', 'ti', 'kü', 'las', 'yon'],
-    difficulty: 'hard',
-    meaning: 'Seslerin ağızda oluşturulması'
-  },
-  {
-    id: '2',
-    word: 'entonasyon',
-    syllables: ['en', 'to', 'nas', 'yon'],
-    difficulty: 'medium',
-    meaning: 'Ses tonundaki değişiklikler'
-  },
-  {
-    id: '3',
-    word: 'telaffuz',
-    syllables: ['te', 'laf', 'fuz'],
-    difficulty: 'easy',
-    meaning: 'Sözcükleri doğru sesletme'
-  },
-  {
-    id: '4',
-    word: 'mikrofonlar',
-    syllables: ['mik', 'ro', 'fon', 'lar'],
-    difficulty: 'medium',
-    meaning: 'Ses alma cihazları'
-  },
-  {
-    id: '5',
-    word: 'karakteristik',
-    syllables: ['ka', 'rak', 'te', 'ris', 'tik'],
-    difficulty: 'hard',
-    meaning: 'Ayırt edici özellik'
-  },
-  {
-    id: '6',
-    word: 'koordinasyon',
-    syllables: ['ko', 'or', 'di', 'nas', 'yon'],
-    difficulty: 'hard',
-    meaning: 'Uyumlu çalışma'
-  }
-];
 
 interface SyllableDisplayProps {
   syllables: string[];
   currentSyllable: number;
   onSyllableClick: (index: number) => void;
+  isPlaying: boolean;
 }
 
-function SyllableDisplay({ syllables, currentSyllable, onSyllableClick }: SyllableDisplayProps) {
+function SyllableDisplay({ syllables, currentSyllable, onSyllableClick, isPlaying }: SyllableDisplayProps) {
   return (
     <div className="flex flex-wrap gap-2 justify-center px-2">
       {syllables.map((syllable, index) => (
@@ -74,8 +26,11 @@ function SyllableDisplay({ syllables, currentSyllable, onSyllableClick }: Syllab
           key={index}
           variant={index === currentSyllable ? "default" : "outline"}
           size="lg"
-          className="text-base sm:text-lg font-medium min-w-12 sm:min-w-16 break-words"
+          className={`text-base sm:text-lg font-medium min-w-12 sm:min-w-16 break-words transition-all duration-200 ${
+            index === currentSyllable && isPlaying ? 'animate-pulse' : ''
+          }`}
           onClick={() => onSyllableClick(index)}
+          disabled={isPlaying}
         >
           {syllable}
         </Button>
@@ -85,32 +40,71 @@ function SyllableDisplay({ syllables, currentSyllable, onSyllableClick }: Syllab
 }
 
 export function SyllableExercises() {
-  const [selectedWord, setSelectedWord] = useState<Word>(practiceWords[0]);
-  const [currentSyllable, setCurrentSyllable] = useState(0);
+  const [selectedExercise, setSelectedExercise] = useState<SyllableExerciseData>(syllableExercisesDatabase[0]);
+  const [currentSyllableIndex, setCurrentSyllableIndex] = useState(0);
+  const [currentPatternIndex, setCurrentPatternIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [practiceMode, setPracticeMode] = useState<'syllables' | 'full'>('syllables');
-  const [completedWords, setCompletedWords] = useKV('completed-syllable-words', [] as string[]);
+  const [practiceMode, setPracticeMode] = useState<'syllables' | 'patterns'>('syllables');
+  const [selectedLevel, setSelectedLevel] = useState<SkillLevel | 'all'>('all');
+  const [userLevel, setUserLevel] = useKV<SkillLevel>('user-level', 'beginner');
+  const [completedExercises, setCompletedExercises] = useKV<string[]>('completed-syllable-exercises', []);
+  const [sessionProgress, setSessionProgress] = useState(0);
 
-  const playCurrentSyllable = useCallback(async () => {
+  // Filter exercises based on selected level
+  const filteredExercises = useMemo(() => {
+    if (selectedLevel === 'all') {
+      return ContentManager.getProgressiveExercises(syllableExercisesDatabase, userLevel);
+    }
+    return ContentManager.filterByLevel(syllableExercisesDatabase, selectedLevel);
+  }, [selectedLevel, userLevel]);
+
+  // Get current content based on practice mode
+  const currentContent = useMemo(() => {
+    if (practiceMode === 'syllables') {
+      return selectedExercise.syllables;
+    }
+    return selectedExercise.patterns;
+  }, [practiceMode, selectedExercise]);
+
+  const currentIndex = practiceMode === 'syllables' ? currentSyllableIndex : currentPatternIndex;
+  const currentItem = currentContent[currentIndex];
+
+  // Get difficulty badge color
+  const getDifficultyColor = (difficulty: number): string => {
+    if (difficulty <= 3) return 'bg-green-100 text-green-800';
+    if (difficulty <= 6) return 'bg-yellow-100 text-yellow-800';
+    if (difficulty <= 8) return 'bg-orange-100 text-orange-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  // Get level badge color
+  const getLevelColor = (level: SkillLevel): string => {
+    const colors = {
+      beginner: 'bg-blue-100 text-blue-800',
+      intermediate: 'bg-purple-100 text-purple-800',
+      advanced: 'bg-orange-100 text-orange-800',
+      expert: 'bg-red-100 text-red-800'
+    };
+    return colors[level];
+  };
+
+  const playCurrentItem = useCallback(async () => {
     if (isPlaying) return;
     
     setIsPlaying(true);
-    const syllableText = practiceMode === 'syllables' 
-      ? selectedWord.syllables[currentSyllable]
-      : selectedWord.word;
+    const textToSpeak = Array.isArray(currentItem) ? currentItem.join('-') : currentItem;
     
     const speechService = SpeechSynthesisService.getInstance();
     
     if (!speechService.isSupported()) {
-      // Fallback for browsers without speech synthesis
-      toast.info(`Telaffuz desteği mevcut değil. Kelime/Hece: "${syllableText}"`);
+      toast.info(`Telaffuz desteği mevcut değil. İçerik: "${textToSpeak}"`);
       setTimeout(() => setIsPlaying(false), 1000);
       return;
     }
 
-    const success = await speechService.speak(syllableText, {
+    const success = await speechService.speak(textToSpeak, {
       lang: 'tr-TR',
-      rate: 0.7,
+      rate: 0.6,
       pitch: 1,
       volume: 1,
       onStart: () => {
@@ -121,226 +115,334 @@ export function SyllableExercises() {
       },
       onError: () => {
         setIsPlaying(false);
-        // Fallback notification
-        toast.info(`Kelime/Hece: "${syllableText}"`);
+        toast.info(`İçerik: "${textToSpeak}"`);
       }
     });
 
     if (!success) {
       setIsPlaying(false);
     }
-  }, [isPlaying, practiceMode, selectedWord, currentSyllable]);
+  }, [isPlaying, currentItem]);
 
-  const nextSyllable = useCallback(() => {
-    if (currentSyllable < selectedWord.syllables.length - 1) {
-      setCurrentSyllable(prev => prev + 1);
+  const nextItem = useCallback(() => {
+    if (practiceMode === 'syllables') {
+      if (currentSyllableIndex < selectedExercise.syllables.length - 1) {
+        setCurrentSyllableIndex(prev => prev + 1);
+        setSessionProgress(prev => Math.min(100, prev + (100 / selectedExercise.syllables.length)));
+      }
+    } else {
+      if (currentPatternIndex < selectedExercise.patterns.length - 1) {
+        setCurrentPatternIndex(prev => prev + 1);
+        setSessionProgress(prev => Math.min(100, prev + (100 / selectedExercise.patterns.length)));
+      }
     }
-  }, [currentSyllable, selectedWord.syllables.length]);
+  }, [practiceMode, currentSyllableIndex, currentPatternIndex, selectedExercise]);
 
-  const previousSyllable = useCallback(() => {
-    if (currentSyllable > 0) {
-      setCurrentSyllable(prev => prev - 1);
+  const previousItem = useCallback(() => {
+    if (practiceMode === 'syllables') {
+      if (currentSyllableIndex > 0) {
+        setCurrentSyllableIndex(prev => prev - 1);
+        setSessionProgress(prev => Math.max(0, prev - (100 / selectedExercise.syllables.length)));
+      }
+    } else {
+      if (currentPatternIndex > 0) {
+        setCurrentPatternIndex(prev => prev - 1);
+        setSessionProgress(prev => Math.max(0, prev - (100 / selectedExercise.patterns.length)));
+      }
     }
-  }, [currentSyllable]);
+  }, [practiceMode, currentSyllableIndex, currentPatternIndex, selectedExercise]);
 
-  const markWordCompleted = useCallback(() => {
-    if (!completedWords.includes(selectedWord.id)) {
-      setCompletedWords(prev => [...prev, selectedWord.id]);
-      toast.success('Kelime tamamlandı! 🎉');
+  const markExerciseCompleted = useCallback(() => {
+    if (!completedExercises.includes(selectedExercise.id)) {
+      setCompletedExercises(prev => [...prev, selectedExercise.id]);
+      toast.success(`${selectedExercise.name} tamamlandı! 🎉`);
     }
-  }, [completedWords, selectedWord.id, setCompletedWords]);
+  }, [selectedExercise.id, completedExercises, setCompletedExercises]);
 
-  const resetProgress = () => {
-    setCurrentSyllable(0);
-    setPracticeMode('syllables');
-  };
+  const resetExercise = useCallback(() => {
+    setCurrentSyllableIndex(0);
+    setCurrentPatternIndex(0);
+    setSessionProgress(0);
+    setIsPlaying(false);
+  }, []);
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const selectExercise = useCallback((exercise: SyllableExerciseData) => {
+    setSelectedExercise(exercise);
+    resetExercise();
+  }, [resetExercise]);
+
+  const handleItemClick = useCallback((index: number) => {
+    if (practiceMode === 'syllables') {
+      setCurrentSyllableIndex(index);
+    } else {
+      setCurrentPatternIndex(index);
     }
-  };
-
-  const getDifficultyText = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'Kolay';
-      case 'medium': return 'Orta';
-      case 'hard': return 'Zor';
-      default: return 'Bilinmiyor';
-    }
-  };
+  }, [practiceMode]);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Volume2 className="h-5 w-5" />
-          Heceleme Egzersizleri
-        </CardTitle>
-        <CardDescription>
-          Zor kelimeleri hece hece öğrenerek telaffuzunuzu geliştirin
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Word Selection */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Kelime Seçin</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {practiceWords.map((word) => (
-              <Button
-                key={word.id}
-                variant={selectedWord.id === word.id ? "default" : "outline"}
-                className="h-auto p-3 flex flex-col items-start gap-1 text-left"
-                onClick={() => {
-                  setSelectedWord(word);
-                  resetProgress();
-                }}
-              >
-                <div className="flex items-center gap-2 w-full">
-                  <span className="font-medium break-words flex-1">{word.word}</span>
-                  {completedWords.includes(word.id) && (
-                    <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  )}
-                </div>
-                <Badge className={`${getDifficultyColor(word.difficulty)} text-xs`}>
-                  {getDifficultyText(word.difficulty)}
-                </Badge>
-                <div className="text-xs text-muted-foreground text-left break-words w-full">
-                  {word.meaning}
-                </div>
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Practice Area */}
-        <div className="space-y-6">
-          <div className="text-center space-y-4">
+    <div className="w-full space-y-6">
+      {/* Header with Controls */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl sm:text-2xl font-bold text-primary mb-2 break-words">
-                {selectedWord.word}
-              </h3>
-              <p className="text-muted-foreground text-sm sm:text-base break-words">{selectedWord.meaning}</p>
+              <CardTitle className="flex items-center gap-2">
+                <Volume2 className="h-5 w-5" />
+                Hece Egzersizleri
+              </CardTitle>
+              <CardDescription>
+                Telaffuz becerilerinizi geliştirmek için sistematik hece çalışmaları
+              </CardDescription>
             </div>
-            
-            {/* Mode Toggle */}
-            <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <Button
-                variant={practiceMode === 'syllables' ? "default" : "outline"}
-                onClick={() => setPracticeMode('syllables')}
-                className="text-sm"
-              >
-                Hece Hece
-              </Button>
-              <Button
-                variant={practiceMode === 'full' ? "default" : "outline"}
-                onClick={() => setPracticeMode('full')}
-                className="text-sm"
-              >
-                Tam Kelime
-              </Button>
+            <div className="flex items-center gap-2">
+              <Select value={selectedLevel} onValueChange={(value: SkillLevel | 'all') => setSelectedLevel(value)}>
+                <SelectTrigger className="w-[140px]">
+                  <FunnelSimple className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Seviyeler</SelectItem>
+                  <SelectItem value="beginner">Başlangıç</SelectItem>
+                  <SelectItem value="intermediate">Orta</SelectItem>
+                  <SelectItem value="advanced">İleri</SelectItem>
+                  <SelectItem value="expert">Uzman</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+        </CardHeader>
+      </Card>
 
-          {practiceMode === 'syllables' ? (
-            <div className="space-y-6">
-              <SyllableDisplay
-                syllables={selectedWord.syllables}
-                currentSyllable={currentSyllable}
-                onSyllableClick={setCurrentSyllable}
-              />
-              
-              <div className="text-center">
-                <div className="text-base sm:text-lg text-muted-foreground mb-2">
-                  Şu anki hece:
+      {/* Exercise Selection */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredExercises.map((exercise) => (
+          <Card 
+            key={exercise.id}
+            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+              selectedExercise.id === exercise.id ? 'ring-2 ring-primary' : ''
+            }`}
+            onClick={() => selectExercise(exercise)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-2">
+                <CardTitle className="text-base font-medium truncate">
+                  {exercise.name}
+                </CardTitle>
+                {completedExercises.includes(exercise.id) && (
+                  <Trophy className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                <Badge className={`text-xs ${getLevelColor(exercise.level)}`}>
+                  {exercise.level === 'beginner' ? 'Başlangıç' :
+                   exercise.level === 'intermediate' ? 'Orta' :
+                   exercise.level === 'advanced' ? 'İleri' : 'Uzman'}
+                </Badge>
+                <Badge className={`text-xs ${getDifficultyColor(exercise.difficulty)}`}>
+                  Zorluk {exercise.difficulty}/10
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                {exercise.description}
+              </p>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">
+                  <Target className="h-3 w-3 inline mr-1" />
+                  Odak: {exercise.focusArea}
                 </div>
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mb-4 break-words">
-                  {selectedWord.syllables[currentSyllable]}
+                <div className="text-xs text-muted-foreground">
+                  <BookOpen className="h-3 w-3 inline mr-1" />
+                  {exercise.syllables.length} hece, {exercise.patterns.length} kalıp
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Exercise Interface */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                {selectedExercise.name}
+                {completedExercises.includes(selectedExercise.id) && (
+                  <Trophy className="h-5 w-5 text-yellow-600" />
+                )}
+              </CardTitle>
+              <CardDescription>{selectedExercise.description}</CardDescription>
+            </div>
+            <Badge className={`${getLevelColor(selectedExercise.level)}`}>
+              {selectedExercise.level === 'beginner' ? 'Başlangıç' :
+               selectedExercise.level === 'intermediate' ? 'Orta' :
+               selectedExercise.level === 'advanced' ? 'İleri' : 'Uzman'}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Practice Mode Selection */}
+          <Tabs value={practiceMode} onValueChange={(value: 'syllables' | 'patterns') => setPracticeMode(value)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="syllables">Tekil Heceler</TabsTrigger>
+              <TabsTrigger value="patterns">Hece Kalıpları</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="syllables" className="space-y-6">
+              {/* Individual Syllables */}
+              <div className="text-center space-y-4">
+                <div className="text-4xl font-bold text-primary py-8 bg-primary/5 rounded-lg">
+                  {selectedExercise.syllables[currentSyllableIndex] || ''}
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
-                  <Button
-                    variant="outline"
-                    onClick={previousSyllable}
-                    disabled={currentSyllable === 0}
-                    className="text-sm"
-                  >
-                    Önceki
-                  </Button>
-                  
-                  <Button
-                    onClick={playCurrentSyllable}
-                    disabled={isPlaying}
-                    size="lg"
-                    className="text-sm"
-                  >
-                    {isPlaying ? (
-                      <Pause className="h-4 w-4 mr-2 flex-shrink-0" />
-                    ) : (
-                      <Play className="h-4 w-4 mr-2 flex-shrink-0" />
-                    )}
-                    <span className="truncate">Dinle</span>
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={nextSyllable}
-                    disabled={currentSyllable === selectedWord.syllables.length - 1}
-                    className="text-sm"
-                  >
-                    Sonraki
-                  </Button>
+                <SyllableDisplay
+                  syllables={selectedExercise.syllables}
+                  currentSyllable={currentSyllableIndex}
+                  onSyllableClick={handleItemClick}
+                  isPlaying={isPlaying}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="patterns" className="space-y-6">
+              {/* Pattern Practice */}
+              <div className="text-center space-y-4">
+                <div className="text-2xl sm:text-3xl font-bold text-primary py-8 bg-primary/5 rounded-lg">
+                  {selectedExercise.patterns[currentPatternIndex] || ''}
+                </div>
+                
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {selectedExercise.patterns.map((pattern, index) => (
+                    <Button
+                      key={index}
+                      variant={index === currentPatternIndex ? "default" : "outline"}
+                      className={`transition-all duration-200 ${
+                        index === currentPatternIndex && isPlaying ? 'animate-pulse' : ''
+                      }`}
+                      onClick={() => handleItemClick(index)}
+                      disabled={isPlaying}
+                    >
+                      {pattern}
+                    </Button>
+                  ))}
                 </div>
               </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>İlerleme</span>
+              <span>{Math.round(sessionProgress)}%</span>
             </div>
-          ) : (
-            <div className="text-center space-y-6">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary break-words">
-                {selectedWord.word}
-              </div>
-              
-              <Button
-                onClick={playCurrentSyllable}
-                disabled={isPlaying}
-                size="lg"
-                className="text-sm"
-              >
-                {isPlaying ? (
-                  <Pause className="h-4 w-4 mr-2 flex-shrink-0" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2 flex-shrink-0" />
-                )}
-                <span className="truncate">Tam Kelimeyi Dinle</span>
+            <Progress value={sessionProgress} className="h-2" />
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={previousItem}
+              variant="outline"
+              disabled={currentIndex === 0 || isPlaying}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Önceki
+            </Button>
+
+            <Button
+              onClick={playCurrentItem}
+              disabled={isPlaying}
+              size="lg"
+              className="min-w-[120px]"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="h-4 w-4 mr-2" />
+                  Çalıyor...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Dinle
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={nextItem}
+              variant="outline"
+              disabled={currentIndex === currentContent.length - 1 || isPlaying}
+            >
+              Sonraki
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+
+          {/* Additional Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button onClick={resetExercise} variant="outline">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Sıfırla
+            </Button>
+
+            {sessionProgress >= 100 && (
+              <Button onClick={markExerciseCompleted} variant="default">
+                <Check className="h-4 w-4 mr-2" />
+                Tamamlandı Olarak İşaretle
               </Button>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <Button onClick={resetProgress} variant="outline" className="text-sm">
-              <RotateCcw className="h-4 w-4 mr-2 flex-shrink-0" />
-              <span className="truncate">Sıfırla</span>
-            </Button>
-            
-            <Button onClick={markWordCompleted} variant="secondary" className="text-sm">
-              <Check className="h-4 w-4 mr-2 flex-shrink-0" />
-              <span className="truncate">Tamamlandı</span>
-            </Button>
+            )}
           </div>
-        </div>
 
-        {/* Progress */}
-        {completedWords.length > 0 && (
-          <div className="text-center p-3 bg-secondary/20 rounded-lg">
-            <div className="text-sm text-muted-foreground">Tamamlanan Kelimeler</div>
-            <div className="text-xl font-semibold text-secondary-foreground">
-              {completedWords.length} / {practiceWords.length}
+          {/* Instructions */}
+          <Card className="bg-muted/50">
+            <CardContent className="p-4">
+              <h4 className="font-medium mb-2">Nasıl Çalışılır:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                {selectedExercise.instructions.map((instruction, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="flex-shrink-0 w-5 h-5 bg-primary/10 text-primary rounded-full text-xs flex items-center justify-center mt-0.5">
+                      {index + 1}
+                    </span>
+                    <span>{instruction}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Zorluk</div>
+              <div className="text-xl font-semibold text-blue-600">
+                {selectedExercise.difficulty}/10
+              </div>
+            </div>
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Hece Sayısı</div>
+              <div className="text-xl font-semibold text-green-600">
+                {selectedExercise.syllables.length}
+              </div>
+            </div>
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Kalıp Sayısı</div>
+              <div className="text-xl font-semibold text-purple-600">
+                {selectedExercise.patterns.length}
+              </div>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <div className="text-sm text-muted-foreground">Tamamlanan</div>
+              <div className="text-xl font-semibold text-orange-600">
+                {completedExercises.length}
+              </div>
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
