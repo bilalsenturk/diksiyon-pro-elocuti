@@ -99,13 +99,25 @@ export function SyllableExercises() {
     
     // Web Speech API kullanarak telaffuz
     if ('speechSynthesis' in window) {
+      // Cancel any existing speech
+      speechSynthesis.cancel();
+      
       const utterance = new SpeechSynthesisUtterance(syllableText);
       utterance.lang = 'tr-TR';
       utterance.rate = 0.7;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      
       utterance.onend = () => setIsPlaying(false);
+      utterance.onerror = () => {
+        setIsPlaying(false);
+        console.warn('Speech synthesis error occurred');
+      };
+      
       speechSynthesis.speak(utterance);
     } else {
-      // Fallback: 1 saniye bekle
+      // Fallback: görselle kullanıcıyı bilgilendir
+      alert(`Telaffuz: "${syllableText}"`);
       setTimeout(() => setIsPlaying(false), 1000);
     }
   };

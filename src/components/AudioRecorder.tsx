@@ -37,6 +37,12 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
 
   const startRecording = async () => {
     try {
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Mikrofon desteği mevcut değil. Lütfen modern bir tarayıcı kullanın.');
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
@@ -58,6 +64,8 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(chunks, { type: 'audio/wav' });
         onRecordingComplete(audioBlob, duration);
+        // Clean up stream
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start();
@@ -73,6 +81,15 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
       monitorAudioLevel();
     } catch (error) {
       console.error('Error accessing microphone:', error);
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
+        } else if (error.name === 'NotFoundError') {
+          alert('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
+        } else {
+          alert('Mikrofon erişiminde bir hata oluştu: ' + error.message);
+        }
+      }
     }
   };
 
@@ -133,6 +150,8 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
               variant={isRecording ? "destructive" : "default"}
               onClick={isRecording ? stopRecording : startRecording}
               className="h-16 w-16 rounded-full"
+              aria-label={isRecording ? "Kaydı durdur" : "Kayıt başlat"}
+              aria-describedby="recording-status"
             >
               {isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
             </Button>
@@ -142,13 +161,13 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
           </div>
           
           {isRecording && (
-            <div className="text-center space-y-2">
-              <div className="text-2xl font-mono text-primary">
+            <div className="text-center space-y-2" id="recording-status">
+              <div className="text-2xl font-mono text-primary" aria-live="polite">
                 {duration.toFixed(1)}s
               </div>
               <div className="w-48 space-y-1">
                 <div className="text-sm text-muted-foreground">Ses Seviyesi</div>
-                <Progress value={audioLevel} className="h-2" />
+                <Progress value={audioLevel} className="h-2" aria-label={`Ses seviyesi: ${Math.round(audioLevel)}%`} />
               </div>
             </div>
           )}

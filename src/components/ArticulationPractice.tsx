@@ -80,14 +80,25 @@ export function ArticulationPractice() {
     setIsPlaying(true);
     
     if ('speechSynthesis' in window) {
+      // Cancel any existing speech
+      speechSynthesis.cancel();
+      
       const utterance = new SpeechSynthesisUtterance(selectedTwister.text);
       utterance.lang = 'tr-TR';
       utterance.rate = practiceSpeed;
       utterance.pitch = 1;
       utterance.volume = 1;
+      
       utterance.onend = () => setIsPlaying(false);
+      utterance.onerror = () => {
+        setIsPlaying(false);
+        console.warn('Speech synthesis error occurred');
+      };
+      
       speechSynthesis.speak(utterance);
     } else {
+      // Fallback: görselle kullanıcıyı bilgilendir
+      alert(`Telaffuz: "${selectedTwister.text}"`);
       setTimeout(() => setIsPlaying(false), 3000);
     }
   };

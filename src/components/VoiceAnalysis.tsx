@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -29,7 +29,7 @@ interface AnalysisResult {
   timestamp: number;
 }
 
-export function VoiceAnalysis() {
+export const VoiceAnalysis = memo(() => {
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
@@ -43,6 +43,12 @@ export function VoiceAnalysis() {
 
   const startRecording = useCallback(async () => {
     try {
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Mikrofon desteği mevcut değil. Lütfen modern bir tarayıcı kullanın.');
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           sampleRate: 44100,
@@ -70,6 +76,8 @@ export function VoiceAnalysis() {
         const blob = new Blob(chunks, { type: 'audio/wav' });
         setAudioBlob(blob);
         analyzeAudio(blob);
+        // Clean up stream
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
@@ -78,6 +86,15 @@ export function VoiceAnalysis() {
       setIsRecording(true);
     } catch (error) {
       console.error('Error starting recording:', error);
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
+        } else if (error.name === 'NotFoundError') {
+          alert('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
+        } else {
+          alert('Mikrofon erişiminde bir hata oluştu: ' + error.message);
+        }
+      }
     }
   }, []);
 
@@ -178,6 +195,8 @@ export function VoiceAnalysis() {
               variant={isRecording ? "destructive" : "default"}
               className="w-32 h-32 rounded-full"
               disabled={isAnalyzing}
+              aria-label={isRecording ? "Kaydı durdur" : "Kayıt başlat"}
+              aria-describedby="recording-instructions"
             >
               {isRecording ? (
                 <MicOff className="h-8 w-8" />
@@ -188,7 +207,7 @@ export function VoiceAnalysis() {
           </div>
           
           <div className="text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground" id="recording-instructions">
               {isRecording && 'Kayıt devam ediyor...'}
               {isAnalyzing && 'Analiz ediliyor...'}
               {!isRecording && !isAnalyzing && 'Kayıt başlatmak için butona basın'}
@@ -338,4 +357,4 @@ export function VoiceAnalysis() {
       )}
     </div>
   );
-}
+});
