@@ -26,49 +26,106 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
       stopRecording();
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
       if (audioContextRef.current) {
-        audioContextRef.current.close();
+        audioContextRef.current.close().catch(console.warn);
+        audioContextRef.current = null;
       }
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
     };
   }, []);
 
   const startRecording = async () => {
     try {
-      // Check if getUserMedia is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Mikrofon desteği mevcut değil. Lütfen modern bir tarayıcı kullanın.');
+      // Check browser support
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert('Tarayıcınız mikrofon kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!window.MediaRecorder) {
+        alert('Tarayıcınız ses kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 44100,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
       streamRef.current = stream;
 
-      // Set up audio context for visualization
-      audioContextRef.current = new AudioContext();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      source.connect(analyserRef.current);
-      analyserRef.current.fftSize = 256;
+      // Check AudioContext support
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        try {
+          audioContextRef.current = new AudioContextClass();
+          
+          // Resume AudioContext if it's suspended (required by some browsers)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          
+          analyserRef.current = audioContextRef.current.createAnalyser();
+          const source = audioContextRef.current.createMediaStreamSource(stream);
+          source.connect(analyserRef.current);
+          analyserRef.current.fftSize = 256;
+        } catch (audioError) {
+          console.warn('AudioContext not available, visual feedback disabled:', audioError);
+        }
+      }
 
-      // Set up media recorder
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      // Set up media recorder with fallback mime types
+      const supportedMimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/wav'
+      ];
+      
+      let mimeType = '';
+      for (const type of supportedMimeTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
+      }
+
+      const options = mimeType ? { mimeType } : {};
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
       const chunks: Blob[] = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
-        chunks.push(event.data);
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        const audioBlob = new Blob(chunks, { type: mimeType || 'audio/webm' });
         onRecordingComplete(audioBlob, duration);
         // Clean up stream
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.onerror = (error) => {
+        console.error('MediaRecorder error:', error);
+        stopRecording();
+        alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+      };
+
+      mediaRecorderRef.current.start(100); // Record in 100ms chunks
       onRecordingStateChange(true);
 
       // Start duration counter
@@ -78,7 +135,9 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
       }, 100);
 
       // Start audio level monitoring
-      monitorAudioLevel();
+      if (analyserRef.current) {
+        monitorAudioLevel();
+      }
     } catch (error) {
       console.error('Error accessing microphone:', error);
       if (error instanceof Error) {
@@ -86,8 +145,10 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
           alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
         } else if (error.name === 'NotFoundError') {
           alert('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
+        } else if (error.name === 'NotSupportedError') {
+          alert('Tarayıcınız mikrofon kaydını desteklemiyor.');
         } else {
-          alert('Mikrofon erişiminde bir hata oluştu: ' + error.message);
+          alert('Mikrofon erişiminde bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.');
         }
       }
     }
@@ -121,11 +182,16 @@ export function AudioRecorder({ onRecordingComplete, isRecording, onRecordingSta
     const updateLevel = () => {
       if (!analyserRef.current || !isRecording) return;
       
-      analyserRef.current.getByteFrequencyData(dataArray);
-      const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
-      setAudioLevel(average / 255 * 100);
-      
-      animationRef.current = requestAnimationFrame(updateLevel);
+      try {
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+        setAudioLevel(average / 255 * 100);
+        
+        animationRef.current = requestAnimationFrame(updateLevel);
+      } catch (error) {
+        console.warn('Audio level monitoring error:', error);
+        setAudioLevel(0);
+      }
     };
     
     updateLevel();

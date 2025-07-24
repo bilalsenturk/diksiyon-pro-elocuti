@@ -7,36 +7,37 @@
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "portrait-primary",
-  "categories": ["education", "productivity"],
-  "lang": "tr",
-  "dir": "ltr",
   "scope": "/",
+  "lang": "tr",
+  "categories": ["education", "health"],
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMyNTYzZWIiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiPgo8cGF0aCBkPSJNMTc2IDQ4SDE2TDMyIDE4NEgxNjBMMTc2IDQ4WiIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHN2ZyB4PSIxMDQiIHk9IjI0IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiPgo8Y2lyY2xlIGN4PSIxMjgiIGN5PSIxMjgiIHI9IjQwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIvPgo8L3N2Zz4KPC9zdmc+Cjwvc3ZnPgo=",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512x512.png", 
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9IiMyNTYzZWIiLz4KPHN2ZyB4PSIxMjgiIHk9IjEyOCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiBmaWxsPSJub25lIj4KPHN2ZyB4PSI2NCIgeT0iNjQiIHdpZHRoPSIxMjgiIGhlaWdodD0iMTI4IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Im0yMjggMTI4LTMyIDY0SDYwbC0zMi02NEwyOCA2NEg5Nmw2NC0zMkwxOTIgNjRoNjhabS0xMDQtOGEyNCAyNCAwIDEgMC0yNCAyNCAyNCAyNCAwIDAgMCAyNC0yNFoiIGZpbGw9IiNmZmZmZmYiLz4KPC9zdmc+Cjwvc3ZnPgo8L3N2Zz4K",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/screenshots/desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "/screenshots/mobile.png",
-      "sizes": "750x1334",
-      "type": "image/png",
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzI0IiBoZWlnaHQ9IjU1OCIgdmlld0JveD0iMCAwIDMyNCA1NTgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjQiIGhlaWdodD0iNTU4IiByeD0iMjQiIGZpbGw9IiNmOWZhZmIiIHN0cm9rZT0iI2UxZTVlOSIgc3Ryb2tlLXdpZHRoPSIyIi8+Cjx0ZXh0IHg9IjE2MiIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjI0IiBmb250LWZhbWlseT0iSW50ZXIiIGZpbGw9IiMzNzQxNTEiPkRpa3NpeW9uIEFwcDwvdGV4dD4KPHN2ZyB4PSIxMzYiIHk9IjIwMCIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiIgZmlsbD0iIzI1NjNlYiI+CjxwYXRoIGQ9Im0yMjggMTI4LTMyIDY0SDYwbC0zMi02NEwyOCA2NEg5Nmw2NC0zMkwxOTIgNjRoNjhabS0xMDQtOGEyNCAyNCAwIDEgMC0yNCAyNCAyNCAyNCAwIDAgMCAyNC0yNFoiIGZpbGw9ImN1cnJlbnRDb2xvciIvPgo8L3N2Zz4KPC9zdmc+",
+      "sizes": "324x558",
+      "type": "image/svg+xml",
       "form_factor": "narrow"
     }
-  ]
+  ],
+  "features": [
+    "Cross Platform",
+    "fast",
+    "simple"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

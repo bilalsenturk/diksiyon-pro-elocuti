@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useKV } from '@github/spark/hooks';
+import { SpeechSynthesisService } from '@/lib/speechSynthesis';
 
 interface TongueTwister {
   id: string;
@@ -74,32 +75,41 @@ export function ArticulationPractice() {
   const [practiceScores, setPracticeScores] = useKV('articulation-scores', {} as Record<string, number>);
   const [dailyPractice, setDailyPractice] = useKV('daily-articulation', 0);
 
-  const playTwister = () => {
+  const playTwister = async () => {
     if (isPlaying) return;
     
     setIsPlaying(true);
     
-    if ('speechSynthesis' in window) {
-      // Cancel any existing speech
-      speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(selectedTwister.text);
-      utterance.lang = 'tr-TR';
-      utterance.rate = practiceSpeed;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => {
-        setIsPlaying(false);
-        console.warn('Speech synthesis error occurred');
-      };
-      
-      speechSynthesis.speak(utterance);
-    } else {
-      // Fallback: görselle kullanıcıyı bilgilendir
-      alert(`Telaffuz: "${selectedTwister.text}"`);
+    const speechService = SpeechSynthesisService.getInstance();
+    
+    if (!speechService.isSupported()) {
+      // Fallback for browsers without speech synthesis
+      alert(`Telaffuz desteği mevcut değil. Metin: "${selectedTwister.text}"`);
       setTimeout(() => setIsPlaying(false), 3000);
+      return;
+    }
+
+    const success = await speechService.speak(selectedTwister.text, {
+      lang: 'tr-TR',
+      rate: practiceSpeed,
+      pitch: 1,
+      volume: 1,
+      onStart: () => {
+        // Speech started
+      },
+      onEnd: () => {
+        setIsPlaying(false);
+      },
+      onError: (error) => {
+        console.warn('Speech error:', error);
+        setIsPlaying(false);
+        // Fallback to alert
+        alert(`Metin: "${selectedTwister.text}"`);
+      }
+    });
+
+    if (!success) {
+      setIsPlaying(false);
     }
   };
 

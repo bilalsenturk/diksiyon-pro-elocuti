@@ -1,4 +1,5 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useCallback } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +10,28 @@ import { SyllableExercises } from '@/components/SyllableExercises';
 import { ArticulationPractice } from '@/components/ArticulationPractice';
 import { ProgressTracking } from '@/components/ProgressTracking';
 import { VoiceAnalysis } from '@/components/VoiceAnalysis';
+
+// Error Fallback Component
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+  return (
+    <Card className="max-w-md mx-auto mt-8">
+      <CardHeader>
+        <CardTitle className="text-destructive">Bir Hata Oluştu</CardTitle>
+        <CardDescription>
+          Uygulama beklenmedik bir hatayla karşılaştı.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+          {error.message}
+        </div>
+        <Button onClick={resetErrorBoundary} className="w-full">
+          Yeniden Dene
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Loading component for lazy loading
 function ComponentLoader() {
@@ -31,9 +54,13 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordings, setRecordings] = useState<{ blob: Blob; duration: number }[]>([]);
 
-  const handleRecordingComplete = (audioBlob: Blob, duration: number) => {
-    setRecordings(prev => [...prev, { blob: audioBlob, duration }]);
-  };
+  const handleRecordingComplete = useCallback((audioBlob: Blob, duration: number) => {
+    try {
+      setRecordings(prev => [...prev, { blob: audioBlob, duration }]);
+    } catch (error) {
+      console.error('Error handling recording:', error);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,36 +79,36 @@ function App() {
         {/* Main Content */}
         <Tabs defaultValue="analysis" className="w-full">
           {/* Mobile first tab layout */}
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3 mb-6 lg:hidden">
             {/* Primary tabs for mobile */}
             <TabsList className="grid w-full grid-cols-3 h-auto p-1">
-              <TabsTrigger value="analysis" className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="analysis" className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs font-medium">Analiz</span>
+                <span className="font-medium">Analiz</span>
               </TabsTrigger>
-              <TabsTrigger value="recorder" className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="recorder" className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs font-medium">Kayıt</span>
+                <span className="font-medium">Kayıt</span>
               </TabsTrigger>
-              <TabsTrigger value="breathing" className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="breathing" className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Wind className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs font-medium">Nefes</span>
+                <span className="font-medium">Nefes</span>
               </TabsTrigger>
             </TabsList>
             
             {/* Secondary tabs for mobile */}
             <TabsList className="grid w-full grid-cols-3 h-auto p-1">
-              <TabsTrigger value="syllables" className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="syllables" className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs font-medium">Hece</span>
+                <span className="font-medium">Hece</span>
               </TabsTrigger>
-              <TabsTrigger value="articulation" className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="articulation" className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Megaphone className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs font-medium">Artikülasyon</span>
+                <span className="font-medium">Artikülasyon</span>
               </TabsTrigger>
-              <TabsTrigger value="progress" className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="progress" className="flex flex-col items-center gap-1 py-3 px-2 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs font-medium">İlerleme</span>
+                <span className="font-medium">İlerleme</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -117,59 +144,64 @@ function App() {
           </div>
 
           <Suspense fallback={<ComponentLoader />}>
-            <TabsContent value="analysis">
-              <VoiceAnalysis />
-            </TabsContent>
+            <ErrorBoundary
+              FallbackComponent={ErrorFallback}
+              onReset={() => window.location.reload()}
+            >
+              <TabsContent value="analysis">
+                <VoiceAnalysis />
+              </TabsContent>
 
-            <TabsContent value="recorder" className="space-y-6">
-              <AudioRecorder
-                onRecordingComplete={handleRecordingComplete}
-                isRecording={isRecording}
-                onRecordingStateChange={setIsRecording}
-              />
-              
-              {recordings.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Kayıtlarınız</CardTitle>
-                    <CardDescription>
-                      Son yapılan ses kayıtlarınız
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {recordings.slice(-5).reverse().map((recording, index) => (
-                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-secondary/10 rounded-lg">
-                          <audio controls className="w-full sm:flex-1 min-w-0">
-                            <source src={URL.createObjectURL(recording.blob)} type="audio/wav" />
-                            Tarayıcınız ses çalmayı desteklemiyor.
-                          </audio>
-                          <div className="text-sm text-muted-foreground shrink-0 self-center sm:self-auto">
-                            {recording.duration.toFixed(1)}s
+              <TabsContent value="recorder" className="space-y-6">
+                <AudioRecorder
+                  onRecordingComplete={handleRecordingComplete}
+                  isRecording={isRecording}
+                  onRecordingStateChange={setIsRecording}
+                />
+                
+                {recordings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Kayıtlarınız</CardTitle>
+                      <CardDescription>
+                        Son yapılan ses kayıtlarınız
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {recordings.slice(-5).reverse().map((recording, index) => (
+                          <div key={`recording-${index}-${Date.now()}`} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 bg-secondary/10 rounded-lg">
+                            <audio controls className="w-full sm:flex-1 min-w-0" preload="none">
+                              <source src={URL.createObjectURL(recording.blob)} type={recording.blob.type} />
+                              Tarayıcınız ses çalmayı desteklemiyor.
+                            </audio>
+                            <div className="text-sm text-muted-foreground shrink-0 self-center sm:self-auto">
+                              {recording.duration.toFixed(1)}s
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
 
-            <TabsContent value="breathing">
-              <BreathingExercises />
-            </TabsContent>
+              <TabsContent value="breathing">
+                <BreathingExercises />
+              </TabsContent>
 
-            <TabsContent value="syllables">
-              <SyllableExercises />
-            </TabsContent>
+              <TabsContent value="syllables">
+                <SyllableExercises />
+              </TabsContent>
 
-            <TabsContent value="articulation">
-              <ArticulationPractice />
-            </TabsContent>
+              <TabsContent value="articulation">
+                <ArticulationPractice />
+              </TabsContent>
 
-            <TabsContent value="progress">
-              <ProgressTracking />
-            </TabsContent>
+              <TabsContent value="progress">
+                <ProgressTracking />
+              </TabsContent>
+            </ErrorBoundary>
           </Suspense>
         </Tabs>
 

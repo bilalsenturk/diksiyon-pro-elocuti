@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useKV } from '@github/spark/hooks';
+import { SpeechSynthesisService } from '@/lib/speechSynthesis';
 
 interface Word {
   id: string;
@@ -89,7 +90,7 @@ export function SyllableExercises() {
   const [practiceMode, setPracticeMode] = useState<'syllables' | 'full'>('syllables');
   const [completedWords, setCompletedWords] = useKV('completed-syllable-words', [] as string[]);
 
-  const playCurrentSyllable = () => {
+  const playCurrentSyllable = async () => {
     if (isPlaying) return;
     
     setIsPlaying(true);
@@ -97,28 +98,36 @@ export function SyllableExercises() {
       ? selectedWord.syllables[currentSyllable]
       : selectedWord.word;
     
-    // Web Speech API kullanarak telaffuz
-    if ('speechSynthesis' in window) {
-      // Cancel any existing speech
-      speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(syllableText);
-      utterance.lang = 'tr-TR';
-      utterance.rate = 0.7;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => {
-        setIsPlaying(false);
-        console.warn('Speech synthesis error occurred');
-      };
-      
-      speechSynthesis.speak(utterance);
-    } else {
-      // Fallback: görselle kullanıcıyı bilgilendir
-      alert(`Telaffuz: "${syllableText}"`);
+    const speechService = SpeechSynthesisService.getInstance();
+    
+    if (!speechService.isSupported()) {
+      // Fallback for browsers without speech synthesis
+      alert(`Telaffuz desteği mevcut değil. Kelime/Hece: "${syllableText}"`);
       setTimeout(() => setIsPlaying(false), 1000);
+      return;
+    }
+
+    const success = await speechService.speak(syllableText, {
+      lang: 'tr-TR',
+      rate: 0.7,
+      pitch: 1,
+      volume: 1,
+      onStart: () => {
+        // Speech started
+      },
+      onEnd: () => {
+        setIsPlaying(false);
+      },
+      onError: (error) => {
+        console.warn('Speech error:', error);
+        setIsPlaying(false);
+        // Fallback to alert
+        alert(`Kelime/Hece: "${syllableText}"`);
+      }
+    });
+
+    if (!success) {
+      setIsPlaying(false);
     }
   };
 

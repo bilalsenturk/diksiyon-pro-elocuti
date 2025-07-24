@@ -3,28 +3,70 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
     <meta name="description" content="Konuşma kalitenizi artırmak için tasarlanmış kapsamlı diksiyon geliştirme uygulaması. Nefes kontrolü, telaffuz ve artikülasyon becerilerinizi geliştirin.">
-    <meta name="keywords" content="diksiyon, konuşma, telaffuz, artikülasyon, nefes egzersizi, ses analizi">
+    <meta name="keywords" content="diksiyon, konuşma, telaffuz, artikülasyon, nefes egzersizi, ses analizi, diksiyon kursu, konuşma teknikleri">
     <meta name="author" content="Diksiyon Geliştirme Uygulaması">
-    <meta property="og:title" content="Diksiyon Geliştirme Uygulaması">
-    <meta property="og:description" content="Konuşma kalitenizi artırmak için tasarlanmış kapsamlı diksiyon geliştirme uygulaması">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta property="og:title" content="Diksiyon Geliştirme Uygulaması - Konuşma Kalitesi ve Telaffuz Geliştirme">
+    <meta property="og:description" content="Konuşma kalitenizi artırmak için tasarlanmış kapsamlı diksiyon geliştirme uygulaması. Ses analizi, nefes kontrolü ve artikülasyon egzersizleri ile diksiyonunuzu mükemmelleştirin.">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Diksiyon Geliştirme Uygulaması">
+    <meta property="og:locale" content="tr_TR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Diksiyon Geliştirme Uygulaması">
+    <meta name="twitter:description" content="Konuşma kalitenizi artırmak için tasarlanmış kapsamlı diksiyon geliştirme uygulaması">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Diksiyon App">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Diksiyon App">
+    <meta name="msapplication-TileColor" content="#2563eb">
+    <meta name="msapplication-navbutton-color" content="#2563eb">
+    <meta name="msapplication-starturl" content="/">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Diksiyon Geliştirme Uygulaması - Konuşma Kalitesi ve Telaffuz Geliştirme</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="/src/main.css" rel="stylesheet" />
+    <script>
+        // Performance optimization
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {
+                    // Service worker registration failed, continue without it
+                });
+            });
+        }
+        
+        // Prevent FOUC (Flash of Unstyled Content)
+        document.documentElement.style.setProperty('--initial-color-mode', 'light');
+        
+        // Error handling for uncaught errors
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
 </head>
 
 <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <noscript>
+        <div style="text-align: center; padding: 50px; font-family: Inter, sans-serif;">
+            <h1>JavaScript Gerekli</h1>
+            <p>Bu uygulama çalışmak için JavaScript gerektirir. Lütfen tarayıcınızda JavaScript'i etkinleştirin.</p>
+        </div>
+    </noscript>
 </body>
 
 </html>

@@ -43,9 +43,14 @@ export const VoiceAnalysis = memo(() => {
 
   const startRecording = useCallback(async () => {
     try {
-      // Check if getUserMedia is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Mikrofon desteği mevcut değil. Lütfen modern bir tarayıcı kullanın.');
+      // Check browser support
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert('Tarayıcınız mikrofon kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
+        return;
+      }
+
+      if (!window.MediaRecorder) {
+        alert('Tarayıcınız ses kaydını desteklemiyor. Lütfen güncel bir tarayıcı kullanın.');
         return;
       }
 
@@ -53,34 +58,73 @@ export const VoiceAnalysis = memo(() => {
         audio: {
           sampleRate: 44100,
           echoCancellation: true,
-          noiseSuppression: true
+          noiseSuppression: true,
+          autoGainControl: true
         } 
       });
       
-      // Set up audio context for real-time analysis
-      audioContextRef.current = new AudioContext();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 2048;
-      
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      source.connect(analyserRef.current);
+      // Check AudioContext support
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        try {
+          audioContextRef.current = new AudioContextClass();
+          
+          // Resume AudioContext if it's suspended (required by some browsers)
+          if (audioContextRef.current.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          
+          analyserRef.current = audioContextRef.current.createAnalyser();
+          analyserRef.current.fftSize = 2048;
+          
+          const source = audioContextRef.current.createMediaStreamSource(stream);
+          source.connect(analyserRef.current);
+        } catch (audioError) {
+          console.warn('AudioContext not available, analysis will be limited:', audioError);
+        }
+      }
 
-      const mediaRecorder = new MediaRecorder(stream);
+      // Set up media recorder with fallback mime types
+      const supportedMimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/wav'
+      ];
+      
+      let mimeType = '';
+      for (const type of supportedMimeTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
+      }
+
+      const options = mimeType ? { mimeType } : {};
+      const mediaRecorder = new MediaRecorder(stream, options);
       const chunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        chunks.push(event.data);
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
+        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
         setAudioBlob(blob);
         analyzeAudio(blob);
         // Clean up stream
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.onerror = (error) => {
+        console.error('MediaRecorder error:', error);
+        stopRecording();
+        alert('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+      };
+
+      mediaRecorder.start(100); // Record in 100ms chunks
       mediaRecorderRef.current = mediaRecorder;
       recordingStartTime.current = Date.now();
       setIsRecording(true);
@@ -91,8 +135,10 @@ export const VoiceAnalysis = memo(() => {
           alert('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon iznini etkinleştirin.');
         } else if (error.name === 'NotFoundError') {
           alert('Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.');
+        } else if (error.name === 'NotSupportedError') {
+          alert('Tarayıcınız mikrofon kaydını desteklemiyor.');
         } else {
-          alert('Mikrofon erişiminde bir hata oluştu: ' + error.message);
+          alert('Mikrofon erişiminde bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.');
         }
       }
     }
@@ -100,12 +146,18 @@ export const VoiceAnalysis = memo(() => {
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+      try {
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+      } catch (error) {
+        console.warn('Error stopping recording:', error);
+        setIsRecording(false);
+      }
       
       // Clean up audio context
       if (audioContextRef.current) {
-        audioContextRef.current.close();
+        audioContextRef.current.close().catch(console.warn);
+        audioContextRef.current = null;
       }
     }
   }, [isRecording]);
