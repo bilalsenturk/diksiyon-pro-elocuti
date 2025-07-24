@@ -282,10 +282,10 @@ export const VoiceAnalysis = memo(() => {
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle>Analiz Sonuçları</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Analiz Sonuçları</CardTitle>
               <div className="flex items-center gap-2 flex-wrap">
                 <SocialShare analysis={currentAnalysis} />
-                <Badge className={getScoreColor(currentAnalysis.overallScore)}>
+                <Badge className={`${getScoreColor(currentAnalysis.overallScore)} text-xs whitespace-nowrap`}>
                   {Math.round(currentAnalysis.overallScore)}/100 - {getScoreLabel(currentAnalysis.overallScore)}
                 </Badge>
               </div>
@@ -299,20 +299,20 @@ export const VoiceAnalysis = memo(() => {
                 <span className="font-medium">Pitch Analizi</span>
                 <Badge variant="outline">{Math.round(currentAnalysis.pitch.score)}/100</Badge>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Ortalama Frekans</div>
-                  <div className="text-lg font-semibold">{Math.round(currentAnalysis.pitch.averageHz)} Hz</div>
+                  <div className="text-lg font-semibold break-words">{Math.round(currentAnalysis.pitch.averageHz)} Hz</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Pitch Aralığı</div>
-                  <div className="text-lg font-semibold">{Math.round(currentAnalysis.pitch.range)} Hz</div>
+                  <div className="text-lg font-semibold break-words">{Math.round(currentAnalysis.pitch.range)} Hz</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Stabilite</div>
                   <div className="flex items-center gap-2">
-                    <Progress value={currentAnalysis.pitch.stability * 100} className="flex-1" />
-                    <span className="text-sm">{Math.round(currentAnalysis.pitch.stability * 100)}%</span>
+                    <Progress value={currentAnalysis.pitch.stability * 100} className="flex-1 min-w-0" />
+                    <span className="text-sm whitespace-nowrap">{Math.round(currentAnalysis.pitch.stability * 100)}%</span>
                   </div>
                 </div>
               </div>
@@ -325,21 +325,21 @@ export const VoiceAnalysis = memo(() => {
                 <span className="font-medium">Tempo Analizi</span>
                 <Badge variant="outline">{Math.round(currentAnalysis.tempo.score)}/100</Badge>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Konuşma Hızı</div>
-                  <div className="text-lg font-semibold">{Math.round(currentAnalysis.tempo.wordsPerMinute)} kelime/dk</div>
+                  <div className="text-lg font-semibold break-words">{Math.round(currentAnalysis.tempo.wordsPerMinute)} kelime/dk</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Ritim Skoru</div>
                   <div className="flex items-center gap-2">
-                    <Progress value={currentAnalysis.tempo.rhythm * 100} className="flex-1" />
-                    <span className="text-sm">{Math.round(currentAnalysis.tempo.rhythm * 100)}%</span>
+                    <Progress value={currentAnalysis.tempo.rhythm * 100} className="flex-1 min-w-0" />
+                    <span className="text-sm whitespace-nowrap">{Math.round(currentAnalysis.tempo.rhythm * 100)}%</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Duraklama Sıklığı</div>
-                  <div className="text-lg font-semibold">{(currentAnalysis.tempo.pauseFrequency * 100).toFixed(1)}%</div>
+                  <div className="text-lg font-semibold break-words">{(currentAnalysis.tempo.pauseFrequency * 100).toFixed(1)}%</div>
                 </div>
               </div>
             </div>
@@ -351,26 +351,26 @@ export const VoiceAnalysis = memo(() => {
                 <span className="font-medium">Netlik Analizi</span>
                 <Badge variant="outline">{Math.round(currentAnalysis.clarity.score)}/100</Badge>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Ünsüz Netliği</div>
                   <div className="flex items-center gap-2">
-                    <Progress value={currentAnalysis.clarity.consonantSharpness * 100} className="flex-1" />
-                    <span className="text-sm">{Math.round(currentAnalysis.clarity.consonantSharpness * 100)}%</span>
+                    <Progress value={currentAnalysis.clarity.consonantSharpness * 100} className="flex-1 min-w-0" />
+                    <span className="text-sm whitespace-nowrap">{Math.round(currentAnalysis.clarity.consonantSharpness * 100)}%</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Ünlü Netliği</div>
                   <div className="flex items-center gap-2">
-                    <Progress value={currentAnalysis.clarity.vowelClarity * 100} className="flex-1" />
-                    <span className="text-sm">{Math.round(currentAnalysis.clarity.vowelClarity * 100)}%</span>
+                    <Progress value={currentAnalysis.clarity.vowelClarity * 100} className="flex-1 min-w-0" />
+                    <span className="text-sm whitespace-nowrap">{Math.round(currentAnalysis.clarity.vowelClarity * 100)}%</span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">Genel Netlik</div>
                   <div className="flex items-center gap-2">
-                    <Progress value={currentAnalysis.clarity.overall * 100} className="flex-1" />
-                    <span className="text-sm">{Math.round(currentAnalysis.clarity.overall * 100)}%</span>
+                    <Progress value={currentAnalysis.clarity.overall * 100} className="flex-1 min-w-0" />
+                    <span className="text-sm whitespace-nowrap">{Math.round(currentAnalysis.clarity.overall * 100)}%</span>
                   </div>
                 </div>
               </div>
@@ -389,17 +389,17 @@ export const VoiceAnalysis = memo(() => {
           <CardContent>
             <div className="space-y-3">
               {analysisHistory.slice(0, 5).map((analysis, index) => (
-                <div key={analysis.timestamp} className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
+                <div key={analysis.timestamp} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
                   <div className="flex items-center gap-3">
                     <div className="text-sm text-muted-foreground">
                       {new Date(analysis.timestamp).toLocaleString('tr-TR')}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-xs space-x-2">
-                      <span>Pitch: {Math.round(analysis.pitch.score)}</span>
-                      <span>Tempo: {Math.round(analysis.tempo.score)}</span>
-                      <span>Netlik: {Math.round(analysis.clarity.score)}</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <div className="text-xs space-y-1 sm:space-y-0 sm:space-x-2 flex flex-col sm:flex-row">
+                      <span className="whitespace-nowrap">Pitch: {Math.round(analysis.pitch.score)}</span>
+                      <span className="whitespace-nowrap">Tempo: {Math.round(analysis.tempo.score)}</span>
+                      <span className="whitespace-nowrap">Netlik: {Math.round(analysis.clarity.score)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <SocialShare 
@@ -410,7 +410,7 @@ export const VoiceAnalysis = memo(() => {
                           </Button>
                         } 
                       />
-                      <Badge className={getScoreColor(analysis.overallScore)}>
+                      <Badge className={`${getScoreColor(analysis.overallScore)} text-xs whitespace-nowrap`}>
                         {Math.round(analysis.overallScore)}
                       </Badge>
                     </div>

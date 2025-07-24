@@ -82,29 +82,29 @@ export function ProgressTracking() {
         
         {/* Overall Progress */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Genel İlerleme</h3>
-            <span className="text-2xl font-bold text-primary">{Math.round(overallProgress)}%</span>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-base sm:text-lg font-semibold">Genel İlerleme</h3>
+            <span className="text-xl sm:text-2xl font-bold text-primary whitespace-nowrap">{Math.round(overallProgress)}%</span>
           </div>
           <Progress value={overallProgress} className="h-3" />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground break-words">
             Tüm egzersiz kategorilerindeki genel performansınız
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
           {/* Breathing Sessions */}
           <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
+                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
                   <Clock className="h-4 w-4 text-blue-600" />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{breathingSessions}</div>
-                  <div className="text-sm text-muted-foreground">Nefes Seansı</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xl sm:text-2xl font-bold">{breathingSessions}</div>
+                  <div className="text-sm text-muted-foreground truncate">Nefes Seansı</div>
                 </div>
               </div>
             </CardContent>
@@ -112,14 +112,14 @@ export function ProgressTracking() {
 
           {/* Completed Words */}
           <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
+                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
                   <Target className="h-4 w-4 text-green-600" />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{completedWords.length}</div>
-                  <div className="text-sm text-muted-foreground">Kelime Öğrenildi</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xl sm:text-2xl font-bold">{completedWords.length}</div>
+                  <div className="text-sm text-muted-foreground truncate">Kelime Öğrenildi</div>
                 </div>
               </div>
             </CardContent>
@@ -127,16 +127,16 @@ export function ProgressTracking() {
 
           {/* Articulation Score */}
           <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
+                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
                   <Award className="h-4 w-4 text-purple-600" />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xl sm:text-2xl font-bold">
                     {avgArticulationScore > 0 ? avgArticulationScore.toFixed(1) : '0.0'}
                   </div>
-                  <div className="text-sm text-muted-foreground">Artikülasyon Puanı</div>
+                  <div className="text-sm text-muted-foreground truncate">Artikülasyon Puanı</div>
                 </div>
               </div>
             </CardContent>
@@ -144,14 +144,14 @@ export function ProgressTracking() {
 
           {/* Daily Practice */}
           <Card className="border-l-4 border-l-orange-500">
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
+                <div className="p-2 bg-orange-100 rounded-lg flex-shrink-0">
                   <Calendar className="h-4 w-4 text-orange-600" />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{dailyPractice}</div>
-                  <div className="text-sm text-muted-foreground">Günlük Pratik</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xl sm:text-2xl font-bold">{dailyPractice}</div>
+                  <div className="text-sm text-muted-foreground truncate">Günlük Pratik</div>
                 </div>
               </div>
             </CardContent>
@@ -160,32 +160,32 @@ export function ProgressTracking() {
 
         {/* Weekly Goal Progress */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Haftalık Hedef</h3>
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-base sm:text-lg font-semibold">Haftalık Hedef</h3>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
               {dailyPractice * 7} / {weeklyGoal} tekrar
             </span>
           </div>
           <Progress value={weeklyProgress} className="h-2" />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground break-words">
             Bu hafta için belirlediğiniz hedefe ulaşma oranınız
           </p>
         </div>
 
         {/* Detailed Progress by Category */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Kategori Bazlı İlerleme</h3>
+          <h3 className="text-base sm:text-lg font-semibold">Kategori Bazlı İlerleme</h3>
           
           <div className="space-y-3">
             {/* Breathing Progress */}
-            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
-              <div>
-                <div className="font-medium">Nefes Egzersizleri</div>
-                <div className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">Nefes Egzersizleri</div>
+                <div className="text-sm text-muted-foreground break-words">
                   {breathingSessions} seans tamamlandı
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0">
                 <div className="text-lg font-semibold text-blue-600">
                   {breathingSessions > 0 ? '✓' : '○'}
                 </div>
@@ -193,14 +193,14 @@ export function ProgressTracking() {
             </div>
 
             {/* Syllable Progress */}
-            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
-              <div>
-                <div className="font-medium">Heceleme Egzersizleri</div>
-                <div className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">Heceleme Egzersizleri</div>
+                <div className="text-sm text-muted-foreground break-words">
                   {completedWords.length} kelime tamamlandı
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0">
                 <div className="text-lg font-semibold text-green-600">
                   {Math.round((completedWords.length / 6) * 100)}%
                 </div>
@@ -208,14 +208,14 @@ export function ProgressTracking() {
             </div>
 
             {/* Articulation Progress */}
-            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
-              <div>
-                <div className="font-medium">Artikülasyon Pratiği</div>
-                <div className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">Artikülasyon Pratiği</div>
+                <div className="text-sm text-muted-foreground break-words">
                   {articulationValues.length} egzersiz değerlendirildi
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0">
                 <div className="text-lg font-semibold text-purple-600">
                   {avgArticulationScore > 0 ? `${avgArticulationScore.toFixed(1)}/5` : '0/5'}
                 </div>
@@ -226,14 +226,14 @@ export function ProgressTracking() {
 
         {/* Insights and Recommendations */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Öneriler ve İçgörüler</h3>
+          <h3 className="text-base sm:text-lg font-semibold">Öneriler ve İçgörüler</h3>
           <div className="space-y-2">
             {insights.map((insight, index) => (
               <div
                 key={index}
                 className="p-3 bg-accent/10 border-l-4 border-l-accent rounded-r-lg"
               >
-                <p className="text-sm">{insight}</p>
+                <p className="text-sm break-words">{insight}</p>
               </div>
             ))}
           </div>
@@ -242,20 +242,20 @@ export function ProgressTracking() {
         {/* Achievement Badges */}
         {(breathingSessions > 10 || completedWords.length > 3 || avgArticulationScore > 4) && (
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold">Başarımlar</h3>
+            <h3 className="text-base sm:text-lg font-semibold">Başarımlar</h3>
             <div className="flex flex-wrap gap-2">
               {breathingSessions > 10 && (
-                <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm font-medium break-words">
                   🌬️ Nefes Ustası
                 </div>
               )}
               {completedWords.length > 3 && (
-                <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm font-medium break-words">
                   📚 Kelime Avcısı
                 </div>
               )}
               {avgArticulationScore > 4 && (
-                <div className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                <div className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs sm:text-sm font-medium break-words">
                   🎯 Artikülasyon Şampiyonu
                 </div>
               )}

@@ -143,20 +143,20 @@ export function BreathingExercises() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Exercise Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {breathingExercises.map((exercise) => (
             <Button
               key={exercise.id}
               variant={selectedExercise.id === exercise.id ? "default" : "outline"}
-              className="h-auto p-3 flex flex-col items-start"
+              className="h-auto p-3 flex flex-col items-start text-left"
               onClick={() => {
                 setSelectedExercise(exercise);
                 resetExercise();
               }}
               disabled={isActive}
             >
-              <div className="font-medium">{exercise.name}</div>
-              <div className="text-xs text-muted-foreground text-left">
+              <div className="font-medium truncate w-full">{exercise.name}</div>
+              <div className="text-xs text-muted-foreground break-words w-full">
                 {exercise.description}
               </div>
             </Button>
@@ -184,14 +184,14 @@ export function BreathingExercises() {
             )}
           </div>
 
-          <div className="text-center space-y-2 w-full max-w-xs">
+          <div className="text-center space-y-2 w-full max-w-xs px-4">
             <div className="text-sm text-muted-foreground">
               Döngü {currentCycle + 1} / {selectedExercise.cycles}
             </div>
             <Progress value={currentProgress} className="h-2" />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 px-4">
             {!isActive ? (
               <Button onClick={startExercise} size="lg">
                 <Play className="h-4 w-4 mr-2" />

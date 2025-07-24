@@ -222,13 +222,13 @@ Konuşma becerilerimi Diksiyon Geliştirme Uygulaması ile geliştiriyorum! 🗣
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShareNetwork className="h-5 w-5" />
-            Sonuçları Paylaş
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <ShareNetwork className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Sonuçları Paylaş</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Analiz sonuçlarınızı sosyal medyada paylaşarak ilerlemenizi arkadaşlarınızla kutlayın
           </DialogDescription>
         </DialogHeader>
@@ -251,17 +251,17 @@ Konuşma becerilerimi Diksiyon Geliştirme Uygulaması ile geliştiriyorum! 🗣
               </Badge>
 
               <div className="grid grid-cols-3 gap-2 text-xs">
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3 text-blue-600" />
-                  <span>Pitch: {Math.round(analysis.pitch.score)}</span>
+                <div className="flex flex-col sm:flex-row items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-blue-600 flex-shrink-0" />
+                  <span className="text-center sm:text-left">Pitch: {Math.round(analysis.pitch.score)}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-green-600" />
-                  <span>Tempo: {Math.round(analysis.tempo.score)}</span>
+                <div className="flex flex-col sm:flex-row items-center gap-1">
+                  <Clock className="h-3 w-3 text-green-600 flex-shrink-0" />
+                  <span className="text-center sm:text-left">Tempo: {Math.round(analysis.tempo.score)}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Volume2 className="h-3 w-3 text-purple-600" />
-                  <span>Netlik: {Math.round(analysis.clarity.score)}</span>
+                <div className="flex flex-col sm:flex-row items-center gap-1">
+                  <Volume2 className="h-3 w-3 text-purple-600 flex-shrink-0" />
+                  <span className="text-center sm:text-left">Netlik: {Math.round(analysis.clarity.score)}</span>
                 </div>
               </div>
 
@@ -273,23 +273,23 @@ Konuşma becerilerimi Diksiyon Geliştirme Uygulaması ile geliştiriyorum! 🗣
 
           {/* Action Buttons */}
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button 
                 onClick={handleCopyText}
                 variant="outline" 
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 text-sm"
               >
-                <Copy className="h-4 w-4" />
-                Metni Kopyala
+                <Copy className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Metni Kopyala</span>
               </Button>
               <Button 
                 onClick={handleDownloadImage}
                 variant="outline" 
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 text-sm"
                 disabled={isGeneratingImage}
               >
-                <Download className="h-4 w-4" />
-                {isGeneratingImage ? 'Hazırlanıyor...' : 'Görsel İndir'}
+                <Download className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{isGeneratingImage ? 'Hazırlanıyor...' : 'Görsel İndir'}</span>
               </Button>
             </div>
 
@@ -302,34 +302,34 @@ Konuşma becerilerimi Diksiyon Geliştirme Uygulaması ile geliştiriyorum! 🗣
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare('twitter')}
-                  className="gap-2 border-blue-500/20 hover:bg-blue-50"
+                  className="gap-2 border-blue-500/20 hover:bg-blue-50 text-sm"
                 >
-                  <TwitterLogo className="h-4 w-4 text-blue-500" />
-                  Twitter
+                  <TwitterLogo className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                  <span className="truncate">Twitter</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare('facebook')}
-                  className="gap-2 border-blue-600/20 hover:bg-blue-50"
+                  className="gap-2 border-blue-600/20 hover:bg-blue-50 text-sm"
                 >
-                  <FacebookLogo className="h-4 w-4 text-blue-600" />
-                  Facebook
+                  <FacebookLogo className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                  <span className="truncate">Facebook</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare('linkedin')}
-                  className="gap-2 border-blue-700/20 hover:bg-blue-50"
+                  className="gap-2 border-blue-700/20 hover:bg-blue-50 text-sm"
                 >
-                  <LinkedinLogo className="h-4 w-4 text-blue-700" />
-                  LinkedIn
+                  <LinkedinLogo className="h-4 w-4 text-blue-700 flex-shrink-0" />
+                  <span className="truncate">LinkedIn</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleSocialShare('whatsapp')}
-                  className="gap-2 border-green-600/20 hover:bg-green-50"
+                  className="gap-2 border-green-600/20 hover:bg-green-50 text-sm"
                 >
-                  <WhatsappLogo className="h-4 w-4 text-green-600" />
-                  WhatsApp
+                  <WhatsappLogo className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span className="truncate">WhatsApp</span>
                 </Button>
               </div>
             </div>

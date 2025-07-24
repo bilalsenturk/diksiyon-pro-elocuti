@@ -176,30 +176,30 @@ export function ArticulationPractice() {
               <Button
                 key={twister.id}
                 variant={selectedTwister.id === twister.id ? "default" : "outline"}
-                className="h-auto p-4 flex flex-col items-start gap-2"
+                className="h-auto p-4 flex flex-col items-start gap-2 text-left"
                 onClick={() => {
                   setSelectedTwister(twister);
                   resetPractice();
                 }}
               >
-                <div className="flex items-center gap-2 w-full justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full justify-between flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge className={getDifficultyColor(twister.difficulty)}>
                       {getDifficultyText(twister.difficulty)}
                     </Badge>
                     <span className="text-sm font-medium">{twister.focus}</span>
                   </div>
                   {practiceScores[twister.id] && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-shrink-0">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
                       <span className="text-sm">{practiceScores[twister.id]}/5</span>
                     </div>
                   )}
                 </div>
-                <div className="text-left text-sm text-muted-foreground">
+                <div className="text-left text-sm text-muted-foreground break-words w-full">
                   {twister.description}
                 </div>
-                <div className="text-left font-medium">
+                <div className="text-left font-medium break-words w-full">
                   "{twister.text}"
                 </div>
               </Button>
@@ -210,21 +210,21 @@ export function ArticulationPractice() {
         {/* Practice Area */}
         <div className="space-y-6">
           <div className="text-center space-y-4">
-            <div className="p-6 bg-secondary/10 rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">{selectedTwister.focus}</h3>
-              <p className="text-3xl font-bold text-primary leading-relaxed">
+            <div className="p-4 sm:p-6 bg-secondary/10 rounded-lg">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">{selectedTwister.focus}</h3>
+              <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-primary leading-relaxed break-words">
                 "{selectedTwister.text}"
               </p>
-              <p className="text-sm text-muted-foreground mt-3">
+              <p className="text-sm text-muted-foreground mt-3 break-words">
                 {selectedTwister.description}
               </p>
             </div>
 
             {/* Target Sounds */}
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center px-2">
               <span className="text-sm text-muted-foreground">Hedef sesler:</span>
               {selectedTwister.targetSounds.map((sound, index) => (
-                <Badge key={index} variant="secondary">
+                <Badge key={index} variant="secondary" className="text-xs">
                   {sound.toUpperCase()}
                 </Badge>
               ))}
@@ -237,15 +237,16 @@ export function ArticulationPractice() {
               <div className="text-sm text-muted-foreground mb-2">
                 Hız: {getSpeedText(practiceSpeed)}
               </div>
-              <div className="flex gap-2 justify-center">
+              <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPracticeSpeed(Math.max(0.3, practiceSpeed - 0.1))}
+                  className="text-xs sm:text-sm"
                 >
                   Yavaşlat
                 </Button>
-                <div className="px-4 py-2 bg-secondary/20 rounded text-sm font-medium">
+                <div className="px-3 sm:px-4 py-2 bg-secondary/20 rounded text-xs sm:text-sm font-medium whitespace-nowrap">
                   {Math.round(practiceSpeed * 100)}%
                 </div>
                 <Button

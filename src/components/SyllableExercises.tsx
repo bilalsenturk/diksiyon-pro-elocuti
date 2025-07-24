@@ -67,13 +67,13 @@ interface SyllableDisplayProps {
 
 function SyllableDisplay({ syllables, currentSyllable, onSyllableClick }: SyllableDisplayProps) {
   return (
-    <div className="flex flex-wrap gap-2 justify-center">
+    <div className="flex flex-wrap gap-2 justify-center px-2">
       {syllables.map((syllable, index) => (
         <Button
           key={index}
           variant={index === currentSyllable ? "default" : "outline"}
           size="lg"
-          className="text-lg font-medium min-w-16"
+          className="text-base sm:text-lg font-medium min-w-12 sm:min-w-16 break-words"
           onClick={() => onSyllableClick(index)}
         >
           {syllable}
@@ -187,27 +187,27 @@ export function SyllableExercises() {
         {/* Word Selection */}
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground">Kelime Seçin</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {practiceWords.map((word) => (
               <Button
                 key={word.id}
                 variant={selectedWord.id === word.id ? "default" : "outline"}
-                className="h-auto p-3 flex flex-col items-start gap-1"
+                className="h-auto p-3 flex flex-col items-start gap-1 text-left"
                 onClick={() => {
                   setSelectedWord(word);
                   resetProgress();
                 }}
               >
                 <div className="flex items-center gap-2 w-full">
-                  <span className="font-medium">{word.word}</span>
+                  <span className="font-medium break-words flex-1">{word.word}</span>
                   {completedWords.includes(word.id) && (
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   )}
                 </div>
-                <Badge className={getDifficultyColor(word.difficulty)}>
+                <Badge className={`${getDifficultyColor(word.difficulty)} text-xs`}>
                   {getDifficultyText(word.difficulty)}
                 </Badge>
-                <div className="text-xs text-muted-foreground text-left">
+                <div className="text-xs text-muted-foreground text-left break-words w-full">
                   {word.meaning}
                 </div>
               </Button>
@@ -219,23 +219,25 @@ export function SyllableExercises() {
         <div className="space-y-6">
           <div className="text-center space-y-4">
             <div>
-              <h3 className="text-2xl font-bold text-primary mb-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-primary mb-2 break-words">
                 {selectedWord.word}
               </h3>
-              <p className="text-muted-foreground">{selectedWord.meaning}</p>
+              <p className="text-muted-foreground text-sm sm:text-base break-words">{selectedWord.meaning}</p>
             </div>
             
             {/* Mode Toggle */}
-            <div className="flex gap-2 justify-center">
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button
                 variant={practiceMode === 'syllables' ? "default" : "outline"}
                 onClick={() => setPracticeMode('syllables')}
+                className="text-sm"
               >
                 Hece Hece
               </Button>
               <Button
                 variant={practiceMode === 'full' ? "default" : "outline"}
                 onClick={() => setPracticeMode('full')}
+                className="text-sm"
               >
                 Tam Kelime
               </Button>
@@ -251,18 +253,19 @@ export function SyllableExercises() {
               />
               
               <div className="text-center">
-                <div className="text-lg text-muted-foreground mb-2">
+                <div className="text-base sm:text-lg text-muted-foreground mb-2">
                   Şu anki hece:
                 </div>
-                <div className="text-4xl font-bold text-primary mb-4">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary mb-4 break-words">
                   {selectedWord.syllables[currentSyllable]}
                 </div>
                 
-                <div className="flex gap-2 justify-center">
+                <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
                   <Button
                     variant="outline"
                     onClick={previousSyllable}
                     disabled={currentSyllable === 0}
+                    className="text-sm"
                   >
                     Önceki
                   </Button>
@@ -271,19 +274,21 @@ export function SyllableExercises() {
                     onClick={playCurrentSyllable}
                     disabled={isPlaying}
                     size="lg"
+                    className="text-sm"
                   >
                     {isPlaying ? (
-                      <Pause className="h-4 w-4 mr-2" />
+                      <Pause className="h-4 w-4 mr-2 flex-shrink-0" />
                     ) : (
-                      <Play className="h-4 w-4 mr-2" />
+                      <Play className="h-4 w-4 mr-2 flex-shrink-0" />
                     )}
-                    Dinle
+                    <span className="truncate">Dinle</span>
                   </Button>
                   
                   <Button
                     variant="outline"
                     onClick={nextSyllable}
                     disabled={currentSyllable === selectedWord.syllables.length - 1}
+                    className="text-sm"
                   >
                     Sonraki
                   </Button>
@@ -292,7 +297,7 @@ export function SyllableExercises() {
             </div>
           ) : (
             <div className="text-center space-y-6">
-              <div className="text-4xl font-bold text-primary">
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary break-words">
                 {selectedWord.word}
               </div>
               
@@ -300,26 +305,27 @@ export function SyllableExercises() {
                 onClick={playCurrentSyllable}
                 disabled={isPlaying}
                 size="lg"
+                className="text-sm"
               >
                 {isPlaying ? (
-                  <Pause className="h-4 w-4 mr-2" />
+                  <Pause className="h-4 w-4 mr-2 flex-shrink-0" />
                 ) : (
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="h-4 w-4 mr-2 flex-shrink-0" />
                 )}
-                Tam Kelimeyi Dinle
+                <span className="truncate">Tam Kelimeyi Dinle</span>
               </Button>
             </div>
           )}
 
-          <div className="flex gap-2 justify-center">
-            <Button onClick={resetProgress} variant="outline">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Sıfırla
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button onClick={resetProgress} variant="outline" className="text-sm">
+              <RotateCcw className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Sıfırla</span>
             </Button>
             
-            <Button onClick={markWordCompleted} variant="secondary">
-              <Check className="h-4 w-4 mr-2" />
-              Tamamlandı
+            <Button onClick={markWordCompleted} variant="secondary" className="text-sm">
+              <Check className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Tamamlandı</span>
             </Button>
           </div>
         </div>
