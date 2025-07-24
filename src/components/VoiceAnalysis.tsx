@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Play, Stop, TrendingUp, Volume2, Clock, Sparkles } from '@phosphor-icons/react';
 import { useKV } from '@github/spark/hooks';
+import { SocialShare } from '@/components/SocialShare';
 
 interface AnalysisResult {
   pitch: {
@@ -280,12 +281,15 @@ export const VoiceAnalysis = memo(() => {
       {currentAnalysis && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Analiz Sonuçları</span>
-              <Badge className={getScoreColor(currentAnalysis.overallScore)}>
-                {Math.round(currentAnalysis.overallScore)}/100 - {getScoreLabel(currentAnalysis.overallScore)}
-              </Badge>
-            </CardTitle>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Analiz Sonuçları</CardTitle>
+              <div className="flex items-center gap-2 flex-wrap">
+                <SocialShare analysis={currentAnalysis} />
+                <Badge className={getScoreColor(currentAnalysis.overallScore)}>
+                  {Math.round(currentAnalysis.overallScore)}/100 - {getScoreLabel(currentAnalysis.overallScore)}
+                </Badge>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Pitch Analysis */}
@@ -397,9 +401,19 @@ export const VoiceAnalysis = memo(() => {
                       <span>Tempo: {Math.round(analysis.tempo.score)}</span>
                       <span>Netlik: {Math.round(analysis.clarity.score)}</span>
                     </div>
-                    <Badge className={getScoreColor(analysis.overallScore)}>
-                      {Math.round(analysis.overallScore)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <SocialShare 
+                        analysis={analysis} 
+                        trigger={
+                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                            Paylaş
+                          </Button>
+                        } 
+                      />
+                      <Badge className={getScoreColor(analysis.overallScore)}>
+                        {Math.round(analysis.overallScore)}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               ))}

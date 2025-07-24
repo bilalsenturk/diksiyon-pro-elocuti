@@ -3,6 +3,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { Mic, Wind, Volume2, Megaphone, TrendingUp, Sparkles } from '@phosphor-icons/react';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { BreathingExercises } from '@/components/BreathingExercises';
@@ -10,6 +11,7 @@ import { SyllableExercises } from '@/components/SyllableExercises';
 import { ArticulationPractice } from '@/components/ArticulationPractice';
 import { ProgressTracking } from '@/components/ProgressTracking';
 import { VoiceAnalysis } from '@/components/VoiceAnalysis';
+import { Toaster } from '@/components/ui/sonner';
 
 // Error Fallback Component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -212,6 +214,7 @@ function App() {
           </p>
         </div>
       </div>
+      <Toaster richColors position="top-center" />
     </div>
   );
 }
